@@ -1,0 +1,81 @@
+# Builds the Android app on every pull request and every push to main.
+# A push to main (including a merged pull request) also publishes the debug
+# APK as a GitHub Release, so it can be downloaded straight onto a device.
+name: Android build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  FLUTTER_VERSION: "3.35.4"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check bundled songs match songs/
+        working-directory: .
+        run: diff -r songs app/assets/songs
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      - name: Build debug APK
+        run: flutter build apk --debug --build-number=${{ github.run_number }}
+
+      - name: Rename APK
+        id: apk
+        run: |
+          name="guitar-learn-debug-${{ github.run_number }}.apk"
+          mv build/app/outputs/flutter-apk/app-debug.apk "build/$name"
+          echo "path=app/build/$name" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.name }}
+          path: ${{ steps.apk.outputs.path }}
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="build-${{ github.run_number }}"
+          short_sha="$(git rev-parse --short HEAD)"
+          gh release create "$tag" "${{ steps.apk.outputs.path }}" \
+            --target "${{ github.sha }}" \
+            --title "Debug build ${{ github.run_number }} ($short_sha)" \
+            --notes "Debug APK built from ${{ github.sha }}. Download the .apk below on an Android phone, tablet or TV and open it to install (allow installing from unknown sources when asked)." \
+            --latest

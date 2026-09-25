@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 320x180 Android TV launcher banner: a long guitar neck with glowing string. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#1B1F3B" android:pathData="M0,0h320v180h-320z"/>
+    <path android:fillColor="#8B5A2B" android:pathData="M20,50h280v80h-280z"/>
+    <path android:fillColor="#EDE3C8" android:pathData="M20,50h8v80h-8z"/>
+    <path android:fillColor="#C9CED6" android:pathData="M88,50h3v80h-3zM146,50h3v80h-3zM199,50h3v80h-3zM248,50h3v80h-3z"/>
+    <path android:fillColor="#EDE3C8" android:pathData="M175,90m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+    <path android:fillColor="#F2F2F2" android:pathData="M20,58h280v1.5h-280zM20,71h280v1.8h-280zM20,84h280v2h-280z"/>
+    <path android:fillColor="#FFD54F" android:pathData="M20,96h280v3h-280z"/>
+    <path android:fillColor="#E0B25B" android:pathData="M20,109h280v2.6h-280zM20,121h280v3h-280z"/>
+    <path android:fillColor="#FF7A1A" android:pathData="M118,97.5m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0"/>
+</vector>
