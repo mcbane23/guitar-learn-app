@@ -157,4 +157,35 @@ void main() {
     expect(scene.dots.any((d) => d.string == 1 && d.fret == 3 && d.opacity < 1), isTrue);
     expect(scene.pluckAge.containsKey(2), isTrue);
   });
+
+  test('starts note by note, with chords as the alternative', () {
+    final d = PlaybackController(song: _song(), chords: _chords, synth: synth, autoTick: false);
+    expect(d.track, TrackKind.full);
+    expect(d.soundModes, SoundMode.values);
+    d.dispose();
+  });
+
+  test('a song without chords offers no chord mode or accompaniment', () {
+    final j = {
+      'id': 'nochords',
+      'title': {'en': 'No chords'},
+      'tracks': {
+        'full': [
+          {'beat': 0, 'string': 1, 'fret': 0, 'finger': 0, 'length': 1},
+        ],
+      },
+    };
+    final d = PlaybackController(song: Song.fromJson(j), chords: _chords, synth: synth, track: TrackKind.easy, autoTick: false);
+    expect(d.track, TrackKind.full);
+    d.setTrack(TrackKind.easy);
+    expect(d.track, TrackKind.full);
+    expect(d.soundModes, [SoundMode.song, SoundMode.mute]);
+    d.nextSoundMode();
+    expect(d.soundMode, SoundMode.mute);
+    d.nextSoundMode();
+    expect(d.soundMode, SoundMode.song);
+    d.setSoundMode(SoundMode.accompany);
+    expect(d.soundMode, SoundMode.song);
+    d.dispose();
+  });
 }
