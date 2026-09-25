@@ -4,6 +4,7 @@ import '../app.dart';
 import '../data/song_repository.dart';
 import '../l10n/strings.dart';
 import '../settings/settings.dart';
+import 'themes.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -16,7 +17,7 @@ class SettingsScreen extends StatelessWidget {
 
     Widget header(String text) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-          child: Text(text, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: const Color(0xFFFF7A1A))),
+          child: Text(text, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.primary)),
         );
 
     Widget toggle(String title, String? subtitle, bool value, void Function(AppSettings, bool) set) =>
@@ -46,6 +47,14 @@ class SettingsScreen extends StatelessWidget {
               title: Text(label, style: const TextStyle(fontSize: 18)),
               leading: Icon(s.language == lang ? Icons.radio_button_checked : Icons.radio_button_off),
               onTap: () => s.update((x) => x.language = lang),
+            ),
+          header(t.theme),
+          for (final theme in AppColorTheme.values)
+            ListTile(
+              title: Text(t.themeName(theme.name), style: const TextStyle(fontSize: 18)),
+              leading: Icon(s.colorTheme == theme ? Icons.radio_button_checked : Icons.radio_button_off),
+              trailing: _ThemeSwatch(theme),
+              onTap: () => s.update((x) => x.colorTheme = theme),
             ),
           header(t.settings),
           toggle(t.leftHanded, t.leftHandedHint, s.leftHanded, (x, v) => x.leftHanded = v),
@@ -104,6 +113,32 @@ class SettingsScreen extends StatelessWidget {
           ListTile(leading: const Icon(Icons.privacy_tip_outlined), title: Text(t.privacy)),
         ],
       ),
+    );
+  }
+}
+
+/// A small preview of a theme: its background with the accent color on top.
+class _ThemeSwatch extends StatelessWidget {
+  const _ThemeSwatch(this.theme);
+
+  final AppColorTheme theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 32,
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: theme.background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(children: [
+        Expanded(child: DecoratedBox(decoration: BoxDecoration(color: theme.surface, borderRadius: BorderRadius.circular(4)))),
+        const SizedBox(width: 4),
+        Expanded(child: DecoratedBox(decoration: BoxDecoration(color: theme.accent, borderRadius: BorderRadius.circular(4)))),
+      ]),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/strings.dart';
+import '../ui/themes.dart';
 
 /// User settings, stored on the device only.
 class AppSettings extends ChangeNotifier {
@@ -29,6 +30,7 @@ class AppSettings extends ChangeNotifier {
   bool showNoteNames = false;
   bool showChordName = true;
   bool highContrast = false;
+  AppColorTheme colorTheme = AppColorTheme.classic;
   bool countIn = true;
   double defaultSpeed = 0.75;
   double volume = 0.9;
@@ -43,6 +45,8 @@ class AppSettings extends ChangeNotifier {
     showNoteNames = p.getBool('showNoteNames') ?? showNoteNames;
     showChordName = p.getBool('showChordName') ?? showChordName;
     highContrast = p.getBool('highContrast') ?? highContrast;
+    final theme = p.getString('colorTheme');
+    colorTheme = AppColorTheme.values.where((t) => t.name == theme).firstOrNull ?? colorTheme;
     countIn = p.getBool('countIn') ?? countIn;
     defaultSpeed = p.getDouble('defaultSpeed') ?? defaultSpeed;
     volume = p.getDouble('volume') ?? volume;
@@ -72,6 +76,7 @@ class AppSettings extends ChangeNotifier {
     p.setBool('showNoteNames', showNoteNames);
     p.setBool('showChordName', showChordName);
     p.setBool('highContrast', highContrast);
+    p.setString('colorTheme', colorTheme.name);
     p.setBool('countIn', countIn);
     p.setDouble('defaultSpeed', defaultSpeed);
     p.setDouble('volume', volume);

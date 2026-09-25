@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
         runSpacing: 8,
         children: [
           Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.music_note_rounded, size: 36, color: Color(0xFFFF7A1A)),
+            Icon(Icons.music_note_rounded, size: 36, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 8),
             Text(t.appTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           ]),

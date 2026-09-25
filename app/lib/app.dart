@@ -7,6 +7,7 @@ import 'data/song_repository.dart';
 import 'l10n/strings.dart';
 import 'settings/settings.dart';
 import 'ui/home_screen.dart';
+import 'ui/themes.dart';
 
 /// Shared services for every screen.
 class AppServices extends InheritedWidget {
@@ -45,7 +46,7 @@ class GuitarApp extends StatelessWidget {
               child: MaterialApp(
                 title: strings.appTitle,
                 debugShowCheckedModeBanner: false,
-                theme: buildTheme(),
+                theme: buildTheme(settings.colorTheme),
                 locale: language.locale,
                 supportedLocales: [for (final l in AppLanguage.values) l.locale],
                 localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -62,29 +63,4 @@ class GuitarApp extends StatelessWidget {
       },
     );
   }
-}
-
-ThemeData buildTheme() {
-  const seed = Color(0xFFFF7A1A);
-  final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark).copyWith(
-    surface: const Color(0xFF141726),
-    primary: seed,
-    onPrimary: Colors.white,
-  );
-  final base = ThemeData(colorScheme: scheme, useMaterial3: true);
-  return base.copyWith(
-    scaffoldBackgroundColor: const Color(0xFF0E1020),
-    visualDensity: VisualDensity.comfortable,
-    focusColor: Colors.white.withValues(alpha: 0.18),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(64, 56),
-        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-      ),
-    ),
-    iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(minimumSize: const Size(52, 52), iconSize: 28),
-    ),
-  );
 }

@@ -147,10 +147,12 @@ class _TopBar extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                   margin: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF7A1A),
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(chord, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
+                  child: Text(chord,
+                      style: TextStyle(
+                          fontSize: 26, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onPrimary)),
                 ),
               _BeatDots(controller: controller),
               const SizedBox(width: 12),
@@ -194,7 +196,7 @@ class _BeatDots extends StatelessWidget {
             height: i == 0 ? 16 : 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: active && i == beat ? (i == 0 ? const Color(0xFFFF7A1A) : Colors.white) : Colors.white24,
+              color: active && i == beat ? (i == 0 ? Theme.of(context).colorScheme.primary : Colors.white) : Colors.white24,
             ),
           ),
       ],
@@ -327,7 +329,7 @@ class _Progress extends StatelessWidget {
                         bottom: 6,
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: const Color(0x55FF7A1A),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.33),
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),

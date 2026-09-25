@@ -114,7 +114,7 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                   ),
                 ),
                 if (shape != null)
-                  Text(shape.name, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Color(0xFFFF7A1A))),
+                  Text(shape.name, style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary)),
               ]),
             ),
             SizedBox(
@@ -129,10 +129,15 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                       child: FocusCard(
                         width: 72,
                         autofocus: i == 0,
-                        color: n == _selected ? const Color(0xFFFF7A1A) : null,
+                        color: n == _selected ? Theme.of(context).colorScheme.primary : null,
                         onTap: () => _pick(chords[n]!),
                         child: Center(
-                          child: Text(n, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                          child: Text(n,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: n == _selected ? Theme.of(context).colorScheme.onPrimary : null,
+                              )),
                         ),
                       ),
                     ),
