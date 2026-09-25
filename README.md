@@ -42,4 +42,4 @@ python3 tools/make_songs.py
 
 This picks guitar positions and fingers, writes `songs/`, and copies the files into `app/assets/songs/` so they ship with the app. CI checks that the two folders match.
 
-The app also downloads `index.json` and new song files from `SONGS_URL` (default `https://mcbane23.github.io/guitar-learn-app/songs/`, change it with `--dart-define=SONGS_URL=...`) and keeps them for offline use. The `Publish songs` workflow publishes `songs/` to GitHub Pages; Pages must be enabled for the repository (Settings > Pages > Source: GitHub Actions), which for a private repository needs a paid GitHub plan or a separate public songs repository.
+The app also downloads new songs from the public [guitar-learn-songs](https://github.com/mcbane23/guitar-learn-songs) repository, served free by GitHub Pages at `https://mcbane23.github.io/guitar-learn-songs/` (`index.json`, `chords.json` and one file per song, the same layout as `songs/` here). Publishing a song there makes it appear in the app without an update; the app keeps downloaded songs for offline use. The URL can be changed with `--dart-define=SONGS_URL=...`.

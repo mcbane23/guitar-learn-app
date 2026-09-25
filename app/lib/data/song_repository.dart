@@ -15,7 +15,7 @@ import '../models/song.dart';
 /// `--dart-define=SONGS_URL=https://.../songs/`.
 const defaultSongsUrl = String.fromEnvironment(
   'SONGS_URL',
-  defaultValue: 'https://mcbane23.github.io/guitar-learn-app/songs/',
+  defaultValue: 'https://mcbane23.github.io/guitar-learn-songs/',
 );
 
 enum RefreshResult { upToDate, added, offline }
