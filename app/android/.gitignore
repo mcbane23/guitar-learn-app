@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# A fixed debug key, so every CI build can update the previous one. Not for store releases.
+!app/keystore/debug.keystore
