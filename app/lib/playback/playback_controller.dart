@@ -31,15 +31,16 @@ class PlaybackController extends ChangeNotifier {
     required this.song,
     required this.chords,
     required this.synth,
-    TrackKind track = TrackKind.easy,
+    TrackKind track = TrackKind.full,
     double speed = 1,
     this.countIn = true,
     double Function()? clock,
     this.autoTick = true,
   }) : _clock = clock ?? _stopwatchClock() {
     _speed = speed.clamp(minSpeed, 1.0);
+    // Note by note is the default; chords are the alternative when the song has them.
     _track = (track == TrackKind.easy && !song.hasEasy) || (track == TrackKind.full && !song.hasFull)
-        ? (song.hasEasy ? TrackKind.easy : TrackKind.full)
+        ? (song.hasFull ? TrackKind.full : TrackKind.easy)
         : track;
     _easyCues = cuesFromChords(song.easy, chords);
     _fullCues = cuesFromNotes(song.full);
@@ -184,7 +185,20 @@ class PlaybackController extends ChangeNotifier {
     if (wasPlaying) play();
   }
 
+  /// Sound modes this song offers: accompaniment needs chords.
+  List<SoundMode> get soundModes => [
+        for (final m in SoundMode.values)
+          if (m != SoundMode.accompany || song.hasEasy) m,
+      ];
+
+  /// Moves to the next sound mode this song offers.
+  void nextSoundMode() {
+    final modes = soundModes;
+    setSoundMode(modes[(modes.indexOf(_soundMode) + 1) % modes.length]);
+  }
+
   void setSoundMode(SoundMode mode) {
+    if (mode == SoundMode.accompany && !song.hasEasy) return;
     _soundMode = mode;
     synth.stopAll();
     _scheduledUntil = _position;

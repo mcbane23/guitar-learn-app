@@ -158,8 +158,8 @@ class _TopBar extends StatelessWidget {
                 SegmentedButton<TrackKind>(
                   showSelectedIcon: false,
                   segments: [
-                    ButtonSegment(value: TrackKind.easy, label: Text(t.easyMode)),
                     ButtonSegment(value: TrackKind.full, label: Text(t.fullMode)),
+                    ButtonSegment(value: TrackKind.easy, label: Text(t.easyMode)),
                   ],
                   selected: {controller.track},
                   onSelectionChanged: (s) => controller.setTrack(s.first),
@@ -393,7 +393,7 @@ class _Controls extends StatelessWidget {
                 icon: soundIcon,
                 label: soundLabel,
                 selected: c.soundMode != SoundMode.mute,
-                onPressed: () => c.setSoundMode(SoundMode.values[(c.soundMode.index + 1) % SoundMode.values.length]),
+                onPressed: c.nextSoundMode,
               ),
               LabeledToggle(
                 icon: Icons.timer_outlined,
