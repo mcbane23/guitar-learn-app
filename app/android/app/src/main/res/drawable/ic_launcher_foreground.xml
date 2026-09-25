@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A short guitar neck: brown fretboard, silver frets, six strings and one orange finger dot. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#8B5A2B" android:pathData="M26,36h56v36h-56z"/>
+    <path android:fillColor="#EDE3C8" android:pathData="M26,36h4v36h-4z"/>
+    <path android:fillColor="#C9CED6" android:pathData="M47,36h2v36h-2zM66,36h2v36h-2z"/>
+    <path android:fillColor="#F2F2F2" android:pathData="M26,39.5h56v1h-56zM26,45.5h56v1h-56zM26,51.5h56v1.2h-56zM26,57.5h56v1.4h-56z"/>
+    <path android:fillColor="#E0B25B" android:pathData="M26,63.3h56v1.7h-56zM26,69h56v2h-56z"/>
+    <path android:fillColor="#FF7A1A" android:pathData="M57.5,52m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0"/>
+</vector>
