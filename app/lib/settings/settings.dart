@@ -35,6 +35,9 @@ class AppSettings extends ChangeNotifier {
   double defaultSpeed = 0.75;
   double volume = 0.9;
 
+  /// Extra places to download songs from, added by the user (folder URLs).
+  List<String> songSources = [];
+
   void _read() {
     final p = _prefs;
     if (p == null) return;
@@ -50,6 +53,7 @@ class AppSettings extends ChangeNotifier {
     countIn = p.getBool('countIn') ?? countIn;
     defaultSpeed = p.getDouble('defaultSpeed') ?? defaultSpeed;
     volume = p.getDouble('volume') ?? volume;
+    songSources = p.getStringList('songSources') ?? songSources;
   }
 
   /// The language to show, resolving "same as phone".
@@ -80,6 +84,7 @@ class AppSettings extends ChangeNotifier {
     p.setBool('countIn', countIn);
     p.setDouble('defaultSpeed', defaultSpeed);
     p.setDouble('volume', volume);
+    p.setStringList('songSources', songSources);
   }
 }
 

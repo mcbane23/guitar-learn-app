@@ -109,6 +109,39 @@ class SettingsScreen extends StatelessWidget {
                     },
             ),
           ),
+          header(t.songSources),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(t.songSourcesHint, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          for (final source in s.songSources)
+            ListTile(
+              leading: const Icon(Icons.link_rounded),
+              title: Text(source, style: const TextStyle(fontSize: 16)),
+              trailing: IconButton(
+                tooltip: t.removeSongSource,
+                icon: const Icon(Icons.delete_outline_rounded),
+                onPressed: () {
+                  s.update((x) => x.songSources = [...x.songSources]..remove(source));
+                  services.songs.extraSources = s.songSources;
+                  services.songs.refresh();
+                },
+              ),
+            ),
+          ListTile(
+            leading: const Icon(Icons.add_link_rounded),
+            title: Text(t.addSongSource, style: const TextStyle(fontSize: 18)),
+            onTap: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final added = await showDialog<(String, int)>(context: context, builder: (_) => const _AddSourceDialog());
+              if (added == null) return;
+              final (url, count) = added;
+              if (!s.songSources.contains(url)) s.update((x) => x.songSources = [...x.songSources, url]);
+              services.songs.extraSources = s.songSources;
+              messenger.showSnackBar(SnackBar(content: Text(t.songSourceAdded(count))));
+              await services.songs.refresh();
+            },
+          ),
           header(t.about),
           ListTile(leading: const Icon(Icons.privacy_tip_outlined), title: Text(t.privacy)),
         ],
@@ -139,6 +172,69 @@ class _ThemeSwatch extends StatelessWidget {
         const SizedBox(width: 4),
         Expanded(child: DecoratedBox(decoration: BoxDecoration(color: theme.accent, borderRadius: BorderRadius.circular(4)))),
       ]),
+    );
+  }
+}
+
+/// Asks for a song list link and checks that there is a song list there
+/// before it is added. Pops with (folder URL, number of songs).
+class _AddSourceDialog extends StatefulWidget {
+  const _AddSourceDialog();
+
+  @override
+  State<_AddSourceDialog> createState() => _AddSourceDialogState();
+}
+
+class _AddSourceDialogState extends State<_AddSourceDialog> {
+  final _link = TextEditingController();
+  bool _checking = false;
+  bool _notFound = false;
+
+  @override
+  void dispose() {
+    _link.dispose();
+    super.dispose();
+  }
+
+  Future<void> _add() async {
+    if (_link.text.trim().isEmpty || _checking) return;
+    setState(() {
+      _checking = true;
+      _notFound = false;
+    });
+    final found = await AppServices.of(context).songs.checkSource(_link.text);
+    if (!mounted) return;
+    if (found == null) {
+      setState(() {
+        _checking = false;
+        _notFound = true;
+      });
+    } else {
+      Navigator.of(context).pop(found);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Strings.of(context);
+    return AlertDialog(
+      title: Text(t.addSongSource),
+      content: TextField(
+        controller: _link,
+        autofocus: true,
+        keyboardType: TextInputType.url,
+        autocorrect: false,
+        onSubmitted: (_) => _add(),
+        decoration: InputDecoration(
+          labelText: t.songSourceLink,
+          hintText: 'https://github.com/user/songs',
+          errorText: _notFound ? t.songSourceNotFound : null,
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
+        FilledButton(onPressed: _checking ? null : _add, child: Text(_checking ? t.checking : t.add)),
+      ],
     );
   }
 }
