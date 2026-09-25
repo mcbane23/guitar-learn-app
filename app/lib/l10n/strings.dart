@@ -84,6 +84,8 @@ class Strings {
   String get colors => _t('colors');
   String get colorsBright => _t('colorsBright');
   String get colorsHighContrast => _t('colorsHighContrast');
+  String get theme => _t('theme');
+  String themeName(String name) => _t('theme_$name');
   String get defaultSpeed => _t('defaultSpeed');
   String get volume => _t('volume');
   String get countIn => _t('countIn');
@@ -163,6 +165,11 @@ class Strings {
     'colors': 'Colors',
     'colorsBright': 'Bright',
     'colorsHighContrast': 'High contrast',
+    'theme': 'Theme',
+    'theme_classic': 'Classic',
+    'theme_frost': 'Frost',
+    'theme_forest': 'Forest',
+    'theme_plum': 'Plum',
     'defaultSpeed': 'Starting speed',
     'volume': 'Volume',
     'countIn': 'Count 3-2-1 before playing',
@@ -227,6 +234,11 @@ class Strings {
     'colors': 'Boje',
     'colorsBright': 'Vesele',
     'colorsHighContrast': 'Jak kontrast',
+    'theme': 'Tema',
+    'theme_classic': 'Klasična',
+    'theme_frost': 'Mraz',
+    'theme_forest': 'Šuma',
+    'theme_plum': 'Šljiva',
     'defaultSpeed': 'Početna brzina',
     'volume': 'Jačina zvuka',
     'countIn': 'Odbrojavanje 3-2-1 pre sviranja',
