@@ -5,6 +5,7 @@ import 'package:guitar_learn/audio/synth.dart';
 import 'package:guitar_learn/data/song_repository.dart';
 import 'package:guitar_learn/l10n/strings.dart';
 import 'package:guitar_learn/settings/settings.dart';
+import 'package:guitar_learn/ui/themes.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -65,6 +66,25 @@ void main() {
     expect(find.text('Гитара'), findsOneWidget);
     expect(find.text('Српске народне'), findsOneWidget);
     expect(find.text('Сијај, сијај, звездице'), findsWidgets);
+  });
+
+  testWidgets('picking a theme in settings recolors the app', (tester) async {
+    tester.view.physicalSize = const Size(2400, 1800);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final repo = await tester.runAsync(_repo);
+    final settings = AppSettings.inMemory()..language = AppLanguage.en;
+    await tester.pumpWidget(GuitarApp(settings: settings, songs: repo!, synth: RecordingSynth()));
+    await tester.pump();
+    await _openFromHome(tester, 'Settings');
+
+    Color accent() => Theme.of(tester.element(find.text('Frost'))).colorScheme.primary;
+    expect(accent(), AppColorTheme.classic.accent);
+    await tester.tap(find.text('Frost'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500)); // theme change animates
+    expect(settings.colorTheme, AppColorTheme.frost);
+    expect(accent(), AppColorTheme.frost.accent);
   });
 
   for (final lang in [AppLanguage.en, AppLanguage.srLatn]) {
