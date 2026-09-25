@@ -320,6 +320,158 @@ SONGS = [
         """,
         "chords": "Am:3 Am:3 Am:3 E:3 Am:3 Am:3 Am:3 E:3 Am:3",
     },
+    {
+        "id": "hot-cross-buns",
+        "title": {"en": "Hot Cross Buns", "sr": "Vruće zemičke"},
+        "artist": TRAD, "source": "Traditional English street cry (18th century)",
+        "difficulty": "easy", "tags": ["kids", "beginner"], "tempo": 96, "timeSignature": [4, 4],
+        "melody": """
+            E3:1 D3:1 C3:2  E3:1 D3:1 C3:2
+            C3:0.5 C3:0.5 C3:0.5 C3:0.5 D3:0.5 D3:0.5 D3:0.5 D3:0.5  E3:1 D3:1 C3:2
+        """,
+        "chords": "C:8 C:2 G:2 C:4",
+    },
+    {
+        "id": "london-bridge",
+        "title": {"en": "London Bridge Is Falling Down", "sr": "Londonski most se ruši"},
+        "artist": TRAD, "source": "Traditional English nursery rhyme (17th century)",
+        "difficulty": "easy", "tags": ["kids", "beginner"], "tempo": 108, "timeSignature": [4, 4],
+        "melody": """
+            G3:1.5 A3:0.5 G3:1 F3:1  E3:1 F3:1 G3:2  D3:1 E3:1 F3:2  E3:1 F3:1 G3:2
+            G3:1.5 A3:0.5 G3:1 F3:1  E3:1 F3:1 G3:2  D3:2 G3:2  E3:1 C3:3
+        """,
+        "chords": "C:8 G7:4 C:4  C:8 G7:4 C:4",
+    },
+    {
+        "id": "yankee-doodle",
+        "title": {"en": "Yankee Doodle", "sr": "Jenki Dudl"},
+        "artist": TRAD, "source": "Traditional American song (18th century)",
+        "difficulty": "easy", "tags": ["kids", "folk"], "tempo": 112, "timeSignature": [4, 4],
+        "melody": """
+            C3:0.5 C3:0.5 D3:0.5 E3:0.5 C3:0.5 E3:0.5 D3:0.5 G2:0.5
+            C3:0.5 C3:0.5 D3:0.5 E3:0.5 C3:1 B2:1
+            C3:0.5 C3:0.5 D3:0.5 E3:0.5 F3:0.5 E3:0.5 D3:0.5 C3:0.5
+            B2:0.5 G2:0.5 A2:0.5 B2:0.5 C3:1 C3:1
+            A3:0.5 B3:0.5 A3:0.5 G3:0.5 A3:0.5 B3:0.5 C4:1
+            G3:0.5 A3:0.5 G3:0.5 F3:0.5 E3:1 G3:1
+            A3:0.5 B3:0.5 A3:0.5 G3:0.5 A3:0.5 B3:0.5 C4:0.5 A3:0.5
+            G3:0.5 C4:0.5 B3:0.5 D4:0.5 C4:1 C4:1
+        """,
+        "chords": "C:4 C:2 G7:2 C:2 F:2 G7:2 C:2  F:2 C:2 G7:2 C:2 F:4 G7:2 C:2",
+    },
+    {
+        "id": "pop-goes-the-weasel",
+        "title": {"en": "Pop! Goes the Weasel", "sr": "Pop! ode lasica"},
+        "artist": TRAD, "source": "Traditional English nursery song (1850s)",
+        "difficulty": "easy", "tags": ["kids"], "tempo": 60, "timeSignature": [6, 8], "beatsPerBar": 2,
+        # 6/8 time: one beat is a dotted quarter note, so eighth notes are 1/3.
+        "melody": """
+            C3:2/3 C3:1/3 D3:2/3 D3:1/3  E3:1/3 G3:1/3 E3:1/3 C3:1
+            C3:2/3 C3:1/3 D3:2/3 D3:1/3  E3:1 C3:1
+            C3:2/3 C3:1/3 D3:2/3 D3:1/3  E3:1/3 G3:1/3 E3:1/3 C3:1
+            A3:1 D3:2/3 F3:1/3  E3:1 C3:1
+        """,
+        "chords": "C:4 G7:2 C:2 C:4 G7:2 C:2",
+    },
+    {
+        "id": "clementine",
+        "title": {"en": "Oh My Darling, Clementine", "sr": "Oj, draga moja Klementina"},
+        "artist": TRAD, "source": "Traditional American folk ballad (1884)",
+        "difficulty": "easy", "tags": ["folk", "beginner"], "tempo": 100, "timeSignature": [3, 4],
+        "melody": """
+            C3:0.75 C3:0.25
+            C3:1 G2:1 E3:0.75 E3:0.25  E3:1 C3:1 C3:0.75 E3:0.25  G3:1 G3:1 F3:0.75 E3:0.25  D3:2 D3:0.75 E3:0.25
+            F3:1 F3:1 E3:0.75 D3:0.25  E3:1 C3:1 C3:0.75 E3:0.25  D3:1 G2:1 B2:0.75 D3:0.25  C3:2
+        """,
+        "chords": "r:1 C:3 C:3 C:3 G7:3 G7:3 C:3 G7:3 C:2",
+    },
+    {
+        "id": "my-bonnie",
+        "title": {"en": "My Bonnie Lies over the Ocean", "sr": "Moja Boni je preko okeana"},
+        "artist": TRAD, "source": "Traditional Scottish folk song (19th century)",
+        "difficulty": "easy", "tags": ["folk"], "tempo": 120, "timeSignature": [3, 4],
+        "melody": """
+            G2:1
+            E3:1.5 D3:0.5 C3:1  D3:1 C3:1 A2:1  G2:1 E2:4 G2:1
+            E3:1.5 D3:0.5 C3:1  C3:1 B2:1 C3:1  D3:5 G2:1
+            E3:1.5 D3:0.5 C3:1  D3:1 C3:1 A2:1  G2:1 E2:4 G2:1
+            A2:1 D3:1 C3:1  B2:1 A2:1 B2:1  C3:2
+        """,
+        "chords": "r:1 C:3 F:3 C:3 C:3 C:3 C:3 G:3 G:3 C:3 F:3 C:3 C:3 D7:3 G7:3 C:2",
+    },
+    {
+        "id": "auld-lang-syne",
+        "title": {"en": "Auld Lang Syne", "sr": "Za stara dobra vremena"},
+        "artist": "Robert Burns (words), traditional melody", "source": "Traditional Scottish (1788)",
+        "difficulty": "easy", "tags": ["folk", "holidays"], "tempo": 84, "timeSignature": [4, 4],
+        "melody": """
+            G2:1
+            C3:1.5 C3:0.5 C3:1 E3:1  D3:1.5 C3:0.5 D3:1 E3:1  C3:1.5 C3:0.5 E3:1 G3:1  A3:3 A3:1
+            G3:1.5 E3:0.5 E3:1 C3:1  D3:1.5 C3:0.5 D3:1 E3:1  C3:1.5 A2:0.5 A2:1 G2:1  C3:3
+        """,
+        "chords": "r:1 C:4 G7:4 C:4 F:4 C:4 G7:4 Am:2 F:1 G7:1 C:3",
+    },
+    {
+        "id": "we-wish-you-a-merry-christmas",
+        "title": {"en": "We Wish You a Merry Christmas", "sr": "Želimo vam srećan Božić"},
+        "artist": TRAD, "source": "Traditional English carol (16th century)",
+        "difficulty": "medium", "tags": ["holidays", "kids"], "tempo": 120, "timeSignature": [3, 4],
+        "melody": """
+            D3:1
+            G3:1 G3:0.5 A3:0.5 G3:0.5 F#3:0.5  E3:1 E3:1 E3:1
+            A3:1 A3:0.5 B3:0.5 A3:0.5 G3:0.5  F#3:1 D3:1 D3:1
+            B3:1 B3:0.5 C4:0.5 B3:0.5 A3:0.5  G3:1 E3:1 D3:0.5 D3:0.5
+            E3:1 A3:1 F#3:1  G3:2
+        """,
+        "chords": "r:1 G:3 C:3 A:3 D:3 B7:3 Em:3 C:1 D:2 G:2",
+    },
+    {
+        "id": "drunken-sailor",
+        "title": {"en": "Drunken Sailor", "sr": "Pijani mornar"},
+        "artist": TRAD, "source": "Traditional sea shanty (19th century)",
+        "difficulty": "medium", "tags": ["folk"], "tempo": 120, "timeSignature": [4, 4],
+        "melody": """
+            A3:1 A3:0.5 A3:0.5 A3:1 A3:0.5 A3:0.5  A3:1 D3:1 F3:1 A3:1
+            G3:1 G3:0.5 G3:0.5 G3:1 G3:0.5 G3:0.5  G3:1 C3:1 E3:1 G3:1
+            A3:1 A3:0.5 A3:0.5 A3:1 A3:0.5 A3:0.5  A3:1 B3:1 C4:1 D4:1
+            C4:1 A3:1 G3:1 E3:1  D3:2 D3:2
+            A3:2 A3:1.5 A3:0.5  A3:1 D3:1 F3:1 A3:1
+            G3:2 G3:1.5 G3:0.5  G3:1 C3:1 E3:1 G3:1
+            A3:2 A3:1.5 A3:0.5  A3:1 B3:1 C4:1 D4:1
+            C4:1 A3:1 G3:1 E3:1  D3:2 D3:2
+        """,
+        "chords": "Dm:8 C:8 Dm:8 C:4 Dm:4  Dm:8 C:8 Dm:8 C:4 Dm:4",
+    },
+    {
+        "id": "minuet-in-g",
+        "title": {"en": "Minuet in G", "sr": "Menuet u G-duru"},
+        "artist": "Christian Petzold", "source": "Minuet in G major, BWV Anh. 114 (c. 1725)",
+        "difficulty": "medium", "tags": ["classical"], "tempo": 96, "timeSignature": [3, 4],
+        "melody": """
+            D4:1 G3:0.5 A3:0.5 B3:0.5 C4:0.5  D4:1 G3:1 G3:1
+            E4:1 C4:0.5 D4:0.5 E4:0.5 F#4:0.5  G4:1 G3:1 G3:1
+            C4:1 D4:0.5 C4:0.5 B3:0.5 A3:0.5  B3:1 C4:0.5 B3:0.5 A3:0.5 G3:0.5
+            F#3:1 G3:0.5 A3:0.5 B3:0.5 G3:0.5  A3:3
+            D4:1 G3:0.5 A3:0.5 B3:0.5 C4:0.5  D4:1 G3:1 G3:1
+            E4:1 C4:0.5 D4:0.5 E4:0.5 F#4:0.5  G4:1 G3:1 G3:1
+            C4:1 D4:0.5 C4:0.5 B3:0.5 A3:0.5  B3:1 C4:0.5 B3:0.5 A3:0.5 G3:0.5
+            A3:1 B3:0.5 A3:0.5 G3:0.5 F#3:0.5  G3:3
+        """,
+        "chords": "G:6 C:3 G:3 C:3 G:3 D:6  G:6 C:3 G:3 C:3 G:3 D7:3 G:3",
+    },
+    {
+        "id": "hall-of-the-mountain-king",
+        "title": {"en": "In the Hall of the Mountain King", "sr": "U dvorani planinskog kralja"},
+        "artist": "Edvard Grieg", "source": "Peer Gynt (1875), main theme",
+        "difficulty": "medium", "tags": ["classical"], "tempo": 100, "timeSignature": [4, 4],
+        "melody": """
+            A2:0.5 B2:0.5 C3:0.5 D3:0.5 E3:0.5 C3:0.5 E3:1  D#3:0.5 B2:0.5 D#3:1 D3:0.5 A#2:0.5 D3:1
+            A2:0.5 B2:0.5 C3:0.5 D3:0.5 E3:0.5 C3:0.5 E3:0.5 A3:0.5  G3:0.5 E3:0.5 C3:0.5 E3:0.5 G3:2
+            A2:0.5 B2:0.5 C3:0.5 D3:0.5 E3:0.5 C3:0.5 E3:1  D#3:0.5 B2:0.5 D#3:1 D3:0.5 A#2:0.5 D3:1
+            A2:0.5 B2:0.5 C3:0.5 D3:0.5 E3:0.5 C3:0.5 E3:0.5 A3:0.5  G3:0.5 E3:0.5 C3:0.5 E3:0.5 G3:2
+        """,
+        "chords": "Am:4 E7:4 Am:4 C:4  Am:4 E7:4 Am:4 C:4",
+    },
 ]
 
 
