@@ -95,6 +95,16 @@ class Strings {
   String get offline => _t('offline');
   String get songsUpToDate => _t('songsUpToDate');
   String newSongs(int n) => _t('newSongs', {'n': '$n'});
+  String get songSources => _t('songSources');
+  String get songSourcesHint => _t('songSourcesHint');
+  String get addSongSource => _t('addSongSource');
+  String get songSourceLink => _t('songSourceLink');
+  String get removeSongSource => _t('removeSongSource');
+  String get cancel => _t('cancel');
+  String get add => _t('add');
+  String get checking => _t('checking');
+  String songSourceAdded(int n) => _t('songSourceAdded', {'n': '$n'});
+  String get songSourceNotFound => _t('songSourceNotFound');
   String get privacy => _t('privacy');
   String get about => _t('about');
   String get tapChord => _t('tapChord');
@@ -179,6 +189,16 @@ class Strings {
     'offline': 'No Internet. Songs on this device still work.',
     'songsUpToDate': 'You have all the songs',
     'newSongs': '{n} new songs added',
+    'songSources': 'Song sources',
+    'songSourcesHint': 'Songs come from the Guitar Learn song list. Add other song lists by their link.',
+    'addSongSource': 'Add a song source',
+    'songSourceLink': 'Link to a song list (GitHub repository or web address)',
+    'removeSongSource': 'Remove',
+    'cancel': 'Cancel',
+    'add': 'Add',
+    'checking': 'Checking...',
+    'songSourceAdded': 'Song source added ({n} songs)',
+    'songSourceNotFound': 'No song list found at this link',
     'privacy': 'This app collects no personal data. No accounts, no ads.',
     'about': 'About',
     'tapChord': 'Pick a chord to see and hear it',
@@ -248,6 +268,16 @@ class Strings {
     'offline': 'Nema interneta. Pesme na uređaju i dalje rade.',
     'songsUpToDate': 'Imaš sve pesme',
     'newSongs': 'Dodato novih pesama: {n}',
+    'songSources': 'Izvori pesama',
+    'songSourcesHint': 'Pesme stižu sa spiska pesama aplikacije. Dodaj druge spiskove pomoću linka.',
+    'addSongSource': 'Dodaj izvor pesama',
+    'songSourceLink': 'Link do spiska pesama (GitHub repozitorijum ili veb adresa)',
+    'removeSongSource': 'Ukloni',
+    'cancel': 'Otkaži',
+    'add': 'Dodaj',
+    'checking': 'Proveravam...',
+    'songSourceAdded': 'Izvor pesama je dodat (pesama: {n})',
+    'songSourceNotFound': 'Na ovom linku nema spiska pesama',
     'privacy': 'Aplikacija ne prikuplja lične podatke. Bez naloga, bez reklama.',
     'about': 'O aplikaciji',
     'tapChord': 'Izaberi akord da ga vidiš i čuješ',
