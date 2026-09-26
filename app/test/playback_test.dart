@@ -121,13 +121,39 @@ void main() {
     expect(c.position, closeTo(0.2, 1e-9));
   });
 
-  test('easy track strums every string of the chord', () {
+  test('chord mode strums every string of the chord softly under the melody', () {
     c.setTrack(TrackKind.easy);
     c.play();
     c.tick();
-    // C chord here plays strings 5..1 (string 6 muted), thick to thin.
-    expect(synth.notes.map((n) => n.string), [5, 4, 3, 2, 1]);
+    // C chord here plays strings 5..1 (string 6 muted), thick to thin: 48 52 55 60 64.
+    final strum = synth.notes.where((n) => n.string == 0).toList();
+    expect(strum.map((n) => n.midi), [48, 52, 55, 60, 64]);
+    expect(strum.every((n) => n.velocity < 0.5), isTrue);
+    // The melody's first note (B string, fret 1 = C4) sounds on top, louder.
+    final melody = synth.notes.where((n) => n.string != 0).toList();
+    expect(melody.map((n) => (n.string, n.midi)), [(2, 60)]);
+    expect(melody.single.velocity, greaterThan(0.9));
     expect(c.currentChord, 'C');
+  });
+
+  test('a chords-only song strums the chords at full volume', () {
+    final j = {
+      'id': 'chordsonly',
+      'title': {'en': 'Chords only'},
+      'tempo': 60,
+      'tracks': {
+        'easy': [
+          {'beat': 0, 'chord': 'C', 'strum': 'down', 'length': 4},
+        ],
+      },
+    };
+    final d = PlaybackController(
+        song: Song.fromJson(j), chords: _chords, synth: synth, countIn: false, clock: () => now, autoTick: false);
+    d.play();
+    d.tick();
+    expect(synth.notes.map((n) => n.string), [5, 4, 3, 2, 1]);
+    expect(synth.notes.every((n) => n.velocity > 0.8), isTrue);
+    d.dispose();
   });
 
   test('accompany mode plays chords quietly under the melody', () {

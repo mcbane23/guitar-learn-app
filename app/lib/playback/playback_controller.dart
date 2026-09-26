@@ -10,6 +10,9 @@ import 'cue.dart';
 
 enum TrackKind { easy, full }
 
+/// How a cue is voiced when it is played.
+enum _Voice { lead, melody, backing, accompany }
+
 /// What the app plays out loud.
 enum SoundMode {
   /// "Play the song for me": the app plays everything shown on the neck.
@@ -295,7 +298,7 @@ class PlaybackController extends ChangeNotifier {
       final cue = cues[_waitIndex];
       _position = cue.beat;
       _waiting = true;
-      _sound(cue, 0);
+      _sound(cue, 0, _Voice.lead);
       notifyListeners();
       return;
     }
@@ -334,9 +337,9 @@ class PlaybackController extends ChangeNotifier {
     final from = _scheduledUntil;
     final msPerBeat = 1000 / beatsPerSecond;
 
-    for (final (cues, accompany) in _soundTracks()) {
+    for (final (cues, voice) in _soundTracks()) {
       for (var i = firstCueAtOrAfter(cues, from); i < cues.length && cues[i].beat < until; i++) {
-        _sound(cues[i], (cues[i].beat - pos) * msPerBeat, accompany: accompany);
+        _sound(cues[i], (cues[i].beat - pos) * msPerBeat, voice);
       }
     }
 
@@ -348,24 +351,33 @@ class PlaybackController extends ChangeNotifier {
     _scheduledUntil = until;
   }
 
-  List<(List<Cue>, bool)> _soundTracks() => switch (_soundMode) {
+  List<(List<Cue>, _Voice)> _soundTracks() => switch (_soundMode) {
         SoundMode.mute => const [],
-        SoundMode.song => [(cues, false)],
-        SoundMode.accompany => [(_easyCues, true)],
+        SoundMode.song => _track == TrackKind.full || !song.hasFull
+            ? [(cues, _Voice.lead)]
+            // Chords alone do not tell which song it is: play the melody on
+            // top and the strums softly underneath, like a singer with a guitar.
+            : [(_easyCues, _Voice.backing), (_fullCues, _Voice.melody)],
+        SoundMode.accompany => [(_easyCues, _Voice.accompany)],
       };
 
-  void _sound(Cue cue, double delayMs, {bool accompany = false}) {
+  void _sound(Cue cue, double delayMs, _Voice voice) {
     if (_soundMode == SoundMode.mute) return;
     final msPerBeat = 1000 / beatsPerSecond;
     final duration = cue.length * msPerBeat;
     final notes = <SynthNote>[];
-    final strings = accompany && _track == TrackKind.easy
+    final strings = voice == _Voice.accompany && _track == TrackKind.easy
         // Chords shown on the neck and the app accompanies: play just the bass note.
         ? (cue.strum == Strum.down ? cue.strings.take(1).toList() : const <int>[])
         : cue.strings;
     final isStrum = cue.strum != null && strings.length > 1;
     final spacing = isStrum ? 14.0 : 0.0;
-    final baseVelocity = accompany ? 0.45 : (cue.strum == Strum.up ? 0.6 : 0.85);
+    final baseVelocity = switch (voice) {
+      _Voice.accompany => 0.45,
+      _Voice.backing => cue.strum == Strum.up ? 0.3 : 0.45,
+      _Voice.melody => 0.95,
+      _Voice.lead => cue.strum == Strum.up ? 0.6 : 0.85,
+    };
     for (var k = 0; k < strings.length; k++) {
       final s = strings[k];
       notes.add(SynthNote(
@@ -373,7 +385,9 @@ class PlaybackController extends ChangeNotifier {
         velocity: baseVelocity,
         delayMs: math.max(0, delayMs) + k * spacing,
         durationMs: duration,
-        string: s,
+        // Backing strums are not tied to a string, so they never cut off a
+        // melody note that happens to be on the same string.
+        string: voice == _Voice.backing ? 0 : s,
       ));
     }
     synth.play(notes);
