@@ -6,8 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
+import '../import/importer.dart';
 import '../models/chord.dart';
 import '../models/song.dart';
+
+export '../import/importer.dart' show ImportFile, ImportOutcome, supportedExtensions, supportedFormatNames;
 
 /// Where new songs are published. The folder holds index.json (the catalog),
 /// chords.json and one JSON file per song, the same layout as songs/ in the
@@ -72,11 +75,13 @@ class SongRepository extends ChangeNotifier {
 
   final Map<String, SongInfo> _bundled = {};
   final Map<String, SongInfo> _downloaded = {};
+  final Map<String, SongInfo> _imported = {}; // songs the user opened from files
   final Map<String, String> _sourceOf = {}; // downloaded song id -> source URL
   final Map<String, Song> _songCache = {};
   ChordLibrary chords = ChordLibrary({});
   Directory? _dir;
   bool refreshing = false;
+  bool importing = false;
 
   static Future<Directory?> _defaultCacheDir() async {
     try {
@@ -98,14 +103,96 @@ class SongRepository extends ChangeNotifier {
     _extra = [for (final s in sources) normalizeSongSource(s)];
   }
 
-  /// All songs, in catalog order (bundled first).
+  /// All songs, in catalog order (bundled first, the user's own files last).
   List<SongInfo> get songs => [
         ..._bundled.values,
         for (final s in _downloaded.values)
           if (!_bundled.containsKey(s.id)) s,
+        ..._imported.values,
       ];
 
+  /// Songs the user opened from files, newest first.
+  List<SongInfo> get importedSongs => _imported.values.toList().reversed.toList();
+
   bool isDownloaded(String id) => _downloaded.containsKey(id) && !_bundled.containsKey(id);
+  bool isImported(String id) => _imported.containsKey(id);
+
+  Directory? get _importDir => _dir == null ? null : Directory('${_dir!.path}/imported');
+
+  Future<void> _loadImported() async {
+    final dir = _importDir;
+    if (dir == null) return;
+    try {
+      final index = File('${dir.path}/index.json');
+      if (!await index.exists()) return;
+      final j = jsonDecode(await index.readAsString()) as Map<String, dynamic>;
+      for (final s in (j['songs'] as List)) {
+        final info = SongInfo.fromJson((s as Map).cast<String, dynamic>());
+        if (await File('${dir.path}/${_importedFile(info.id)}').exists()) _imported[info.id] = info;
+      }
+    } catch (e) {
+      debugPrint('Imported songs unreadable, ignoring them: $e');
+    }
+  }
+
+  String _importedFile(String id) => '${id.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_')}.json';
+
+  Future<void> _saveImportedIndex() async {
+    final dir = _importDir;
+    if (dir == null) return;
+    await dir.create(recursive: true);
+    await File('${dir.path}/index.json').writeAsString(jsonEncode({
+      'version': 1,
+      'songs': [for (final s in _imported.values) s.toJson()],
+    }));
+  }
+
+  /// Reads song files the user picked (Guitar Pro, MIDI, MusicXML, text tabs)
+  /// and adds the ones that could be read to the library, kept on the device.
+  /// Returns one outcome per file, in the same order.
+  Future<List<ImportOutcome>> importFiles(List<ImportFile> files) async {
+    if (files.isEmpty) return const [];
+    importing = true;
+    notifyListeners();
+    try {
+      final request = ImportRequest(files: files, knownChords: chords.names.toSet());
+      final outcomes = files.length == 1 && files.first.bytes.length < 64 * 1024
+          ? importFilesInIsolate(request)
+          : await compute(importFilesInIsolate, request);
+      final dir = _importDir;
+      for (final o in outcomes) {
+        final json = o.song;
+        if (json == null) continue;
+        final song = Song.fromJson(json);
+        final info = SongInfo.fromJson(json);
+        if (dir != null) {
+          await dir.create(recursive: true);
+          await File('${dir.path}/${_importedFile(info.id)}').writeAsString(jsonEncode(json));
+        }
+        _imported.remove(info.id); // re-importing a file moves it to the front
+        _imported[info.id] = info;
+        _songCache[info.id] = song;
+      }
+      await _saveImportedIndex();
+      return outcomes;
+    } finally {
+      importing = false;
+      notifyListeners();
+    }
+  }
+
+  /// Forgets a song the user imported and deletes its file.
+  Future<void> removeImported(String id) async {
+    if (_imported.remove(id) == null) return;
+    _songCache.remove(id);
+    final dir = _importDir;
+    if (dir != null) {
+      final f = File('${dir.path}/${_importedFile(id)}');
+      if (await f.exists()) await f.delete();
+    }
+    await _saveImportedIndex();
+    notifyListeners();
+  }
 
   /// Where a downloaded song came from, or null for built-in songs.
   String? sourceOf(String id) => _sourceOf[id];
@@ -144,6 +231,7 @@ class SongRepository extends ChangeNotifier {
       } catch (e) {
         debugPrint('Song cache unreadable, ignoring it: $e');
       }
+      await _loadImported();
     }
     notifyListeners();
   }
@@ -170,7 +258,9 @@ class SongRepository extends ChangeNotifier {
     String text;
     final downloaded = _downloaded[id];
     final bundled = _bundled[id];
-    if (downloaded != null && _dir != null && (bundled == null || downloaded.version > bundled.version)) {
+    if (_imported.containsKey(id) && _importDir != null) {
+      text = await File('${_importDir!.path}/${_importedFile(id)}').readAsString();
+    } else if (downloaded != null && _dir != null && (bundled == null || downloaded.version > bundled.version)) {
       text = await File('${_dir!.path}/${_fileName(downloaded, _sourceOf[id] ?? baseUrl)}').readAsString();
     } else if (bundled != null) {
       text = await _bundle.loadString('$_assetDir${bundled.file ?? '$id.json'}', cache: false);

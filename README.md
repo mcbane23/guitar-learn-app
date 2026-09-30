@@ -4,7 +4,7 @@ A free play-along guitar app for school kids and adults who can't read music. A 
 
 - Platforms: Android phone, tablet and Android TV (Flutter)
 - Languages: English and Serbian
-- Songs: public-domain songs to start, with new songs downloaded from the Internet
+- Songs: public-domain songs to start, new songs downloaded from the Internet, and your own tab files opened from the device
 
 See [docs/PLAN.md](docs/PLAN.md) for the full plan, feature list and milestones.
 
@@ -32,7 +32,24 @@ flutter run            # on a connected device or emulator
 
 The guitar sound is synthesized on the device (Karplus-Strong plucked strings, `app/android/.../GuitarSynth.kt`), so there are no audio files.
 
-## Adding songs
+## Your own songs (tab files)
+
+Tap **Add songs** on the home screen (or in Settings) and pick one or more files from the device. They are read on the device, kept under **My songs** and work offline. Nothing is uploaded, and the app ships no copyrighted music: users bring their own files.
+
+| Format | Extensions | What is used |
+|---|---|---|
+| Guitar Pro 3, 4, 5 | `.gp3` `.gp4` `.gp5` | strings and frets, tuning, capo, tempo, time signature, repeats, ties, chord names, every guitar track |
+| Guitar Pro 6, 7, 8 | `.gpx` `.gp` | the same, from the XML score inside the file |
+| MIDI | `.mid` `.midi` `.kar` | notes and tempo; positions on the neck are worked out from the pitches, one part per instrument |
+| MusicXML | `.musicxml` `.xml` `.mxl` | tablature staff (string, fret, fingering) when present, otherwise pitches; chord symbols; tuning and capo |
+| Text tabs | `.txt` `.tab` | the six-line `e\|--0--3--\|` blocks from tab websites, chord names written above them; timing is guessed from the spacing, each bar between `\|` marks being one bar |
+| Song file | `.json` | the app's own format below |
+
+A file with several guitars becomes one song with a **part** chooser in the player. Fingers are suggested automatically when the file has none, the neck grows up to 24 frets when a song needs it, and the tuning and capo are shown in the player when they are not standard. Chord names found in the file become the "Easy: chords" track when the app knows the chord.
+
+The readers live in `app/lib/import/` (one file per format) and are pure Dart, so they run in a background isolate. Test files for the Guitar Pro readers were written with [PyGuitarPro](https://github.com/Perlence/PyGuitarPro) (`app/test/fixtures/`).
+
+## Adding songs to the catalog
 
 Songs are JSON files in `songs/` (format in [docs/PLAN.md](docs/PLAN.md), section 5). The easiest way to add one is to write its melody and chords in `tools/make_songs.py` and run:
 

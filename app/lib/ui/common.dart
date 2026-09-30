@@ -26,6 +26,7 @@ class FocusCard extends StatefulWidget {
     super.key,
     required this.child,
     required this.onTap,
+    this.onLongPress,
     this.color,
     this.width,
     this.height,
@@ -34,6 +35,7 @@ class FocusCard extends StatefulWidget {
 
   final Widget child;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final Color? color;
   final double? width;
   final double? height;
@@ -65,6 +67,7 @@ class _FocusCardState extends State<FocusCard> {
           child: InkWell(
             autofocus: widget.autofocus,
             onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
             onFocusChange: (f) => setState(() => _focused = f),
             child: widget.child,
           ),

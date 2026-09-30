@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../import/score.dart' show ImportError;
+
 /// UI languages. Serbian is written in Latin script by default, with Cyrillic
 /// available in settings (generated from the Latin text).
 enum AppLanguage { en, srLatn, srCyrl }
@@ -111,6 +113,34 @@ class Strings {
   String get fingers => _t('fingers');
   String get songNotFound => _t('songNotFound');
   String get back => _t('back');
+  String get mySongs => _t('mySongs');
+  String get addSongs => _t('addSongs');
+  String get addSongsHint => _t('addSongsHint');
+  String readingFiles(int n) => _t('readingFiles', {'n': '$n'});
+  String songsAdded(int n) => n == 1 ? _t('oneSongAdded') : _t('songsAdded', {'n': '$n'});
+  String filesNotRead(int n) => _t('filesNotRead', {'n': '$n'});
+  String get filePickerUnavailable => _t('filePickerUnavailable');
+  String get removeSong => _t('removeSong');
+  String get removeSongConfirm => _t('removeSongConfirm');
+  String get songRemoved => _t('songRemoved');
+  String get part => _t('part');
+  String get tuning => _t('tuning');
+  String capo(int n) => _t('capo', {'n': '$n'});
+  String get recentlyPlayed => _t('recentlyPlayed');
+  String get fromFile => _t('fromFile');
+  String get songFiles => _t('songFiles');
+  String get songFilesHint => _t('songFilesHint');
+  String get ok => _t('ok');
+  String loopBars(int n) => _t('loopBars', {'n': '$n'});
+
+  /// Why a song file could not be opened.
+  String fileError(ImportError? code) => switch (code) {
+        ImportError.unsupported => _t('fileUnsupported'),
+        ImportError.empty => _t('fileEmpty'),
+        ImportError.tooLarge => _t('fileTooLarge'),
+        ImportError.noNotes => _t('fileNoNotes'),
+        _ => _t('fileDamaged'),
+      };
 
   String difficulty(String name) => switch (name) {
         'medium' => medium,
@@ -205,6 +235,32 @@ class Strings {
     'fingers': 'Fingers: 1 index, 2 middle, 3 ring, 4 little',
     'songNotFound': 'This song could not be opened',
     'back': 'Back',
+    'mySongs': 'My songs',
+    'addSongs': 'Add songs',
+    'addSongsHint': 'Open your own tabs from this device: Guitar Pro, MIDI, MusicXML or text tabs. You can pick several files at once.',
+    'readingFiles': 'Reading {n} files...',
+    'oneSongAdded': '1 song added',
+    'songsAdded': '{n} songs added',
+    'filesNotRead': '{n} files could not be read',
+    'filePickerUnavailable': 'Choosing files is not possible on this device',
+    'removeSong': 'Remove from my songs',
+    'removeSongConfirm': 'Remove this song from the device?',
+    'songRemoved': 'Song removed',
+    'part': 'Part',
+    'tuning': 'Tuning',
+    'capo': 'Capo {n}',
+    'recentlyPlayed': 'Recently played',
+    'fromFile': 'From a file',
+    'songFiles': 'Song files',
+    'songFilesHint':
+        'Supported files: Guitar Pro (gp3, gp4, gp5, gpx, gp), MIDI (mid, midi), MusicXML (musicxml, mxl, xml) and text tabs (txt, tab). Songs you add stay on this device.',
+    'ok': 'OK',
+    'loopBars': 'Repeat {n} bars',
+    'fileUnsupported': 'This kind of file is not supported',
+    'fileEmpty': 'The file is empty',
+    'fileTooLarge': 'The file is too large',
+    'fileNoNotes': 'No notes to play were found in the file',
+    'fileDamaged': 'The file could not be read',
   };
 
   static const _sr = {
@@ -284,6 +340,32 @@ class Strings {
     'fingers': 'Prsti: 1 kažiprst, 2 srednji, 3 domali, 4 mali',
     'songNotFound': 'Ova pesma ne može da se otvori',
     'back': 'Nazad',
+    'mySongs': 'Moje pesme',
+    'addSongs': 'Dodaj pesme',
+    'addSongsHint': 'Otvori svoje tabulature sa ovog uređaja: Guitar Pro, MIDI, MusicXML ili tekst. Možeš izabrati više fajlova odjednom.',
+    'readingFiles': 'Čitam fajlove ({n})...',
+    'oneSongAdded': 'Dodata je 1 pesma',
+    'songsAdded': 'Dodato pesama: {n}',
+    'filesNotRead': 'Fajlova koji nisu mogli da se pročitaju: {n}',
+    'filePickerUnavailable': 'Na ovom uređaju nije moguće izabrati fajlove',
+    'removeSong': 'Ukloni iz mojih pesama',
+    'removeSongConfirm': 'Ukloniti ovu pesmu sa uređaja?',
+    'songRemoved': 'Pesma je uklonjena',
+    'part': 'Deonica',
+    'tuning': 'Štim',
+    'capo': 'Kapodaster {n}',
+    'recentlyPlayed': 'Nedavno svirano',
+    'fromFile': 'Iz fajla',
+    'songFiles': 'Fajlovi pesama',
+    'songFilesHint':
+        'Podržani fajlovi: Guitar Pro (gp3, gp4, gp5, gpx, gp), MIDI (mid, midi), MusicXML (musicxml, mxl, xml) i tekstualne tabulature (txt, tab). Dodate pesme ostaju na ovom uređaju.',
+    'ok': 'U redu',
+    'loopBars': 'Ponavljaj {n} takta',
+    'fileUnsupported': 'Ovaj tip fajla nije podržan',
+    'fileEmpty': 'Fajl je prazan',
+    'fileTooLarge': 'Fajl je prevelik',
+    'fileNoNotes': 'U fajlu nema nota za sviranje',
+    'fileDamaged': 'Fajl ne može da se pročita',
   };
 }
 

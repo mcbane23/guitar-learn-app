@@ -60,11 +60,17 @@ jobs:
           echo "path=app/build/$name" >> "$GITHUB_OUTPUT"
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
+      # The APK of a pull request build, for trying it before merging. Kept
+      # short and never fatal: the account's artifact storage is small, and a
+      # full quota must not stop the release below. Builds of main are
+      # published as releases instead.
       - uses: actions/upload-artifact@v4
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
         with:
           name: ${{ steps.apk.outputs.name }}
           path: ${{ steps.apk.outputs.path }}
-          retention-days: 14
+          retention-days: 3
 
       - name: Publish GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

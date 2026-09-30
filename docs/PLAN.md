@@ -46,16 +46,18 @@ Runs on Android phones, tablets and Android TV from one codebase. Languages: Eng
 | **Song library** | Search by title or artist in both languages; filters for difficulty and language; lists for "Beginner", "Kids", "Serbian folk" |
 | | Bundled starter set of public-domain songs that works offline |
 | **Online songs** | App downloads the song catalog from a server over the Internet and caches songs for offline use; new songs appear without an app update |
+| **Your own songs** | Open tab files from the device, several at once: Guitar Pro (gp3, gp4, gp5, gpx, gp), MIDI, MusicXML (musicxml, mxl, xml) and text tabs (txt, tab). They are kept on the device under "My songs" and never uploaded, so the app needs no licensed music. A file with several guitars gets a part chooser; fingers are suggested when the file has none; the neck grows to 24 frets; tuning and capo are shown when not standard |
+| **Practice helpers** | "Recently played" row on the home screen; the repeat button cycles 2 bars, 4 bars, off |
 | **Chord library** | Every chord used in the app shown on the same neck view |
 | **Languages** | English and Serbian (Latin script by default; Cyrillic as an option in settings) |
-| **Kid friendly** | Big touch targets, icons with short labels, no accounts, no ads, no personal data collected, no chat or user uploads |
+| **Kid friendly** | Big touch targets, icons with short labels, no accounts, no ads, no personal data collected, no chat; song files stay on the device |
 | **Android TV** | Same neck view on the big screen, full D-pad navigation, remote play/pause and speed control, listed in the TV launcher |
 | **Settings** | Language, left-handed, show note names, colors, speed default |
 
 ### Phase 2
 
 - **Song editor / publisher** (web page for you): create songs by tapping notes on a neck, or import a MIDI file, then publish to the server.
-- **MIDI import tool**: converts a MIDI melody into string/fret positions automatically (picks the easiest positions), with manual fixes in the editor.
+- ~~**MIDI import tool**~~: done in the app itself (see "Your own songs" above; the same readers could power a web editor).
 - Guided lessons: "Hold the guitar", "Your first chord", "First 3 chords", with the same neck view.
 - Progress (stored on the device only): songs played, stars per song.
 - Phone as a remote for the TV app.
@@ -149,6 +151,7 @@ Good sources of public-domain MIDI and scores: Mutopia Project, IMSLP, and tradi
 | M3 | Song format + 10 songs | JSON format finalized, first 10 public-domain songs, chord library |
 | M4 | Library + search + languages | Search, filters, English/Serbian UI |
 | M5 | Online songs | Catalog and songs downloaded from GitHub Pages and cached offline |
+| M5b | Own song files | Guitar Pro, MIDI, MusicXML and text tabs opened from the device, several at once |
 | M6 | Android TV polish | D-pad navigation, large-screen layout, TV launcher |
 | M7 | Beta | Internal testing track on Google Play (Families policy checked) |
 | M8+ | Phase 2 | Song editor, MIDI import, lessons |

@@ -72,6 +72,8 @@ class SongInfo {
     required this.tags,
     this.file,
     this.version = 1,
+    this.format,
+    this.fileName,
   });
 
   final String id;
@@ -82,6 +84,10 @@ class SongInfo {
   final List<String> tags;
   final String? file;
   final int version;
+
+  /// For songs imported from a file: the file format and name.
+  final String? format;
+  final String? fileName;
 
   /// Title in the given language code, falling back to English.
   String titleFor(String lang) => title[lang] ?? title['en'] ?? title.values.first;
@@ -95,6 +101,8 @@ class SongInfo {
         tags: ((j['tags'] as List?) ?? const []).cast<String>(),
         file: j['file'] as String?,
         version: (j['version'] as int?) ?? 1,
+        format: j['format'] as String?,
+        fileName: j['fileName'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -106,6 +114,8 @@ class SongInfo {
         'tags': tags,
         if (file != null) 'file': file,
         'version': version,
+        if (format != null) 'format': format,
+        if (fileName != null) 'fileName': fileName,
       };
 }
 
@@ -113,6 +123,18 @@ Map<String, String> _stringMap(Object? v) {
   if (v is String) return {'en': v};
   if (v is Map) return v.map((k, v) => MapEntry(k as String, v as String));
   return const {'en': ''};
+}
+
+/// One instrument part of an imported song (a file may hold several guitars).
+class SongPart {
+  const SongPart({required this.name, required this.tuning, required this.capo, required this.notes});
+
+  final String name;
+
+  /// Open-string MIDI pitches, index 0 = string 1 (thin).
+  final List<int> tuning;
+  final int capo;
+  final List<NoteEvent> notes;
 }
 
 /// A complete song with its note tracks.
@@ -126,9 +148,45 @@ class Song {
     required this.full,
     required this.easy,
     this.source = '',
+    this.parts = const [],
+    this.partIndex = 0,
   }) : totalBeats = _totalBeats(full, easy, beatsPerBar);
 
   final SongInfo info;
+
+  /// Other parts of the same piece (empty unless the song was imported from
+  /// a file with several tracks). [partIndex] says which one [full] shows.
+  final List<SongPart> parts;
+  final int partIndex;
+
+  /// The same song showing another of its [parts].
+  Song withPart(int index) {
+    if (index < 0 || index >= parts.length || index == partIndex) return this;
+    final p = parts[index];
+    return Song(
+      info: info,
+      tempo: tempo,
+      beatsPerBar: beatsPerBar,
+      tuning: p.tuning,
+      capo: p.capo,
+      full: p.notes,
+      easy: easy,
+      source: source,
+      parts: parts,
+      partIndex: index,
+    );
+  }
+
+  /// Highest fret any note uses (0 when there are no fretted notes).
+  int get maxFret {
+    var m = 0;
+    for (final n in full) {
+      if (n.fret > m) m = n.fret;
+    }
+    return m;
+  }
+
+  bool get isStandardTuning => tuning.length == 6 && [for (var i = 0; i < 6; i++) tuning[i] == standardTuning[i]].every((x) => x);
 
   /// Beats per minute at 100% speed.
   final double tempo;
@@ -174,6 +232,20 @@ class Song {
         .map((e) => ChordEvent.fromJson((e as Map).cast<String, dynamic>()))
         .toList()
       ..sort((a, b) => a.beat.compareTo(b.beat));
+    final parts = <SongPart>[];
+    for (final p in (j['parts'] as List?) ?? const []) {
+      final m = (p as Map).cast<String, dynamic>();
+      final partTuning = ((m['tuning'] as List?) ?? const []).cast<String>().map(parsePitch).toList().reversed.toList();
+      parts.add(SongPart(
+        name: (m['name'] as String?) ?? 'Part ${parts.length + 1}',
+        tuning: partTuning.length == 6 ? partTuning : standardTuning,
+        capo: (m['capo'] as int?) ?? 0,
+        notes: ((m['notes'] as List?) ?? const [])
+            .map((e) => NoteEvent.fromJson((e as Map).cast<String, dynamic>()))
+            .toList()
+          ..sort((a, b) => a.beat.compareTo(b.beat)),
+      ));
+    }
     return Song(
       info: SongInfo.fromJson(j),
       tempo: (j['tempo'] as num?)?.toDouble() ?? 100,
@@ -183,6 +255,7 @@ class Song {
       full: full,
       easy: easy,
       source: (j['source'] as String?) ?? '',
+      parts: parts.length > 1 ? parts : const [],
     );
   }
 }
