@@ -25,6 +25,9 @@ const _serbianNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'B'
 String noteName(int midi, {bool serbian = false}) =>
     (serbian ? _serbianNames : _sharpNames)[midi % 12];
 
+/// Note name with octave, e.g. 40 -> "E2", 61 -> "C#4". The inverse of [parsePitch].
+String pitchName(int midi) => '${_sharpNames[midi % 12]}${midi ~/ 12 - 1}';
+
 /// Frequency in Hz of a MIDI note.
 double midiToHz(int midi) => 440.0 * math.pow(2, (midi - 69) / 12.0);
 

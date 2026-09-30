@@ -38,6 +38,16 @@ class AppSettings extends ChangeNotifier {
   /// Extra places to download songs from, added by the user (folder URLs).
   List<String> songSources = [];
 
+  /// Ids of the songs played last, newest first.
+  List<String> recentSongs = [];
+
+  static const maxRecent = 8;
+
+  /// Remembers that [id] was just opened.
+  void markPlayed(String id) {
+    update((s) => s.recentSongs = [id, ...s.recentSongs.where((x) => x != id)].take(maxRecent).toList());
+  }
+
   void _read() {
     final p = _prefs;
     if (p == null) return;
@@ -54,6 +64,7 @@ class AppSettings extends ChangeNotifier {
     defaultSpeed = p.getDouble('defaultSpeed') ?? defaultSpeed;
     volume = p.getDouble('volume') ?? volume;
     songSources = p.getStringList('songSources') ?? songSources;
+    recentSongs = p.getStringList('recentSongs') ?? recentSongs;
   }
 
   /// The language to show, resolving "same as phone".
@@ -85,6 +96,7 @@ class AppSettings extends ChangeNotifier {
     p.setDouble('defaultSpeed', defaultSpeed);
     p.setDouble('volume', volume);
     p.setStringList('songSources', songSources);
+    p.setStringList('recentSongs', recentSongs);
   }
 }
 

@@ -4,6 +4,7 @@ import '../app.dart';
 import '../data/song_repository.dart';
 import '../l10n/strings.dart';
 import '../settings/settings.dart';
+import 'add_songs.dart';
 import 'themes.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -85,6 +86,16 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             trailing: Text('${(s.volume * 100).round()}%', style: const TextStyle(fontSize: 18)),
+          ),
+          header(t.songFiles),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(t.songFilesHint, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          ListTile(
+            leading: const Icon(Icons.file_open_rounded),
+            title: Text(t.addSongs, style: const TextStyle(fontSize: 18)),
+            onTap: () => addSongsFlow(context),
           ),
           header(t.onlineSongs),
           ListenableBuilder(

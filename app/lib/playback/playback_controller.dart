@@ -221,19 +221,26 @@ class PlaybackController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Loops the two bars around the current position, or clears the loop.
+  /// Loops the two bars around the current position; tapped again the loop
+  /// grows to four bars, and once more it is cleared.
   void toggleLoop() {
-    if (_loop != null) {
-      _loop = null;
-    } else {
-      final bpb = song.beatsPerBar;
+    final bpb = song.beatsPerBar;
+    final loop = _loop;
+    if (loop == null) {
       final start = (_position / bpb).floor() * bpb.toDouble();
       final end = math.min(start + 2 * bpb, totalBeats);
       _loop = (start: start, end: end);
       if (_position < start || _position >= end) seek(start);
+    } else if (loop.end - loop.start <= 2 * bpb + 1e-9 && loop.end < totalBeats) {
+      _loop = (start: loop.start, end: math.min(loop.start + 4 * bpb, totalBeats));
+    } else {
+      _loop = null;
     }
     notifyListeners();
   }
+
+  /// How many bars the loop covers (0 without a loop).
+  int get loopBars => _loop == null ? 0 : ((_loop!.end - _loop!.start) / song.beatsPerBar).ceil();
 
   /// In wait mode: the player played the note, move on to the next one.
   void next() {

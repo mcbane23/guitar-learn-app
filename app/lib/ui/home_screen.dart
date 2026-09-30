@@ -5,6 +5,8 @@ import '../data/search.dart';
 import '../data/song_repository.dart';
 import '../l10n/strings.dart';
 import '../models/song.dart';
+import '../settings/settings.dart';
+import 'add_songs.dart';
 import 'chords_screen.dart';
 import 'common.dart';
 import 'free_play_screen.dart';
@@ -52,12 +54,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     final repo = AppServices.of(context).songs;
+    final settings = SettingsScope.of(context);
     return Scaffold(
       body: SafeArea(
         child: ListenableBuilder(
           listenable: Listenable.merge([repo, _query]),
           builder: (context, _) {
             final all = repo.songs;
+            final mine = repo.importedSongs;
+            final byId = {for (final s in all) s.id: s};
+            final recent = [for (final id in settings.recentSongs) if (byId[id] case final s?) s];
             final searching = _query.text.trim().isNotEmpty || _difficulty != null;
             return CustomScrollView(
               slivers: [
@@ -66,10 +72,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (searching)
                   _results(context, t, searchSongs(all, _query.text, difficulty: _difficulty))
                 else ...[
-                  _section(context, t, t.beginner, all.where((s) => s.tags.contains('beginner')).toList(), autofocus: true),
+                  if (mine.isNotEmpty)
+                    _section(context, t, t.mySongs, mine, autofocus: true, removable: true, addCard: true)
+                  else
+                    SliverToBoxAdapter(child: _AddSongsBanner(onTap: () => addSongsFlow(context))),
+                  if (recent.isNotEmpty) _section(context, t, t.recentlyPlayed, recent, removable: true),
+                  _section(context, t, t.beginner, all.where((s) => s.tags.contains('beginner')).toList(),
+                      autofocus: mine.isEmpty),
                   _section(context, t, t.kids, all.where((s) => s.tags.contains('kids')).toList()),
                   _section(context, t, t.serbianFolk, all.where((s) => s.tags.contains('serbian-folk')).toList()),
-                  _section(context, t, t.allSongs, all),
+                  _section(context, t, t.allSongs, all, removable: true),
                 ],
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
@@ -81,14 +93,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _header(BuildContext context, Strings t) {
-    Widget action(IconData icon, String label, Widget Function() page) => Padding(
+    Widget action(IconData icon, String label, VoidCallback onPressed) => Padding(
           padding: const EdgeInsets.only(left: 8),
-          child: FilledButton.tonalIcon(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page())),
-            icon: Icon(icon),
-            label: Text(label),
-          ),
+          child: FilledButton.tonalIcon(onPressed: onPressed, icon: Icon(icon), label: Text(label)),
         );
+    void push(Widget Function() page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page()));
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Wrap(
@@ -102,9 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(t.appTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
           ]),
           Wrap(runSpacing: 8, children: [
-            action(Icons.grid_view_rounded, t.chords, () => const ChordsScreen()),
-            action(Icons.touch_app_rounded, t.freePlay, () => const FreePlayScreen()),
-            action(Icons.settings_rounded, t.settings, () => const SettingsScreen()),
+            action(Icons.file_open_rounded, t.addSongs, () => addSongsFlow(context)),
+            action(Icons.grid_view_rounded, t.chords, () => push(() => const ChordsScreen())),
+            action(Icons.touch_app_rounded, t.freePlay, () => push(() => const FreePlayScreen())),
+            action(Icons.settings_rounded, t.settings, () => push(() => const SettingsScreen())),
           ]),
         ],
       ),
@@ -153,7 +163,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _section(BuildContext context, Strings t, String title, List<SongInfo> songs, {bool autofocus = false}) {
+  /// A row of song cards. With [removable], holding a card that came from
+  /// a file offers to remove it; with [addCard], the row ends with a card
+  /// that opens more files.
+  Widget _section(
+    BuildContext context,
+    Strings t,
+    String title,
+    List<SongInfo> songs, {
+    bool autofocus = false,
+    bool removable = false,
+    bool addCard = false,
+  }) {
+    final repo = AppServices.of(context).songs;
+    final count = songs.length + (addCard ? 1 : 0);
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,13 +198,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 : ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    itemCount: songs.length,
+                    itemCount: count,
                     separatorBuilder: (_, _) => const SizedBox(width: 14),
-                    itemBuilder: (context, i) => SongCard(
-                      song: songs[i],
-                      autofocus: autofocus && i == 0,
-                      onTap: () => _open(songs[i]),
-                    ),
+                    itemBuilder: (context, i) {
+                      if (i == songs.length) return _AddSongsCard(onTap: () => addSongsFlow(context));
+                      final song = songs[i];
+                      final imported = repo.isImported(song.id);
+                      return SongCard(
+                        song: song,
+                        imported: imported,
+                        autofocus: autofocus && i == 0,
+                        onTap: () => _open(song),
+                        onLongPress: removable && imported ? () => removeImportedSongFlow(context, song.id) : null,
+                      );
+                    },
                   ),
           ),
         ],
@@ -190,6 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _results(BuildContext context, Strings t, List<SongInfo> songs) {
+    final repo = AppServices.of(context).songs;
     if (songs.isEmpty) {
       return SliverToBoxAdapter(
         child: Padding(
@@ -208,7 +239,12 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisSpacing: 14,
         ),
         itemCount: songs.length,
-        itemBuilder: (context, i) => SongCard(song: songs[i], onTap: () => _open(songs[i])),
+        itemBuilder: (context, i) => SongCard(
+          song: songs[i],
+          imported: repo.isImported(songs[i].id),
+          onTap: () => _open(songs[i]),
+          onLongPress: repo.isImported(songs[i].id) ? () => removeImportedSongFlow(context, songs[i].id) : null,
+        ),
       ),
     );
   }
@@ -221,21 +257,34 @@ const _difficultyColors = {
 };
 
 class SongCard extends StatelessWidget {
-  const SongCard({super.key, required this.song, required this.onTap, this.autofocus = false});
+  const SongCard({
+    super.key,
+    required this.song,
+    required this.onTap,
+    this.onLongPress,
+    this.autofocus = false,
+    this.imported = false,
+  });
 
   final SongInfo song;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool autofocus;
+
+  /// The song came from a file on this device.
+  final bool imported;
 
   @override
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     final colors = _difficultyColors[song.difficulty]!;
     final stars = switch (song.difficulty) { Difficulty.easy => 1, Difficulty.medium => 2, Difficulty.hard => 3 };
+    final subtitle = song.artist.isNotEmpty ? song.artist : (imported ? (song.format ?? t.fromFile) : '');
     return FocusCard(
       width: 220,
       autofocus: autofocus,
       onTap: onTap,
+      onLongPress: onLongPress,
       color: colors.last,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -262,14 +311,81 @@ class SongCard extends StatelessWidget {
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.15),
               ),
               const SizedBox(height: 4),
-              Text(
-                song.artist,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, color: Colors.white70),
-              ),
+              Row(children: [
+                if (imported) ...[
+                  const Icon(Icons.insert_drive_file_rounded, size: 14, color: Colors.white70),
+                  const SizedBox(width: 4),
+                ],
+                Expanded(
+                  child: Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                  ),
+                ),
+              ]),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The card at the end of "My songs" that opens more files.
+class _AddSongsCard extends StatelessWidget {
+  const _AddSongsCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Strings.of(context);
+    return FocusCard(
+      width: 150,
+      onTap: onTap,
+      child: Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.add_circle_outline_rounded, size: 40, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 8),
+          Text(t.addSongs, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Shown at the top of the home screen until the user adds a song file.
+class _AddSongsBanner extends StatelessWidget {
+  const _AddSongsBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Strings.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+      child: FocusCard(
+        onTap: onTap,
+        color: scheme.surfaceContainerHigh,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+          child: Row(children: [
+            Icon(Icons.library_music_rounded, size: 40, color: scheme.primary),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(t.mySongs, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(t.addSongsHint, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+              ]),
+            ),
+            const SizedBox(width: 12),
+            Icon(Icons.file_open_rounded, color: scheme.primary),
+          ]),
         ),
       ),
     );

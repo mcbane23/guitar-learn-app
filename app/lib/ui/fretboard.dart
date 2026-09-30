@@ -65,14 +65,62 @@ class NeckScene {
 
   /// Seconds, for animations.
   final double time;
+
+  /// Whether something on the neck is moving (glowing strings, a strum
+  /// arrow, pulsing dots), so a new frame would look different.
+  bool get animates => pluckAge.isNotEmpty || pulse || (strum != null && strumProgress < 1);
+
+  /// True when drawing [other] would give the same picture as this scene,
+  /// so the neck can skip a repaint (for example while paused).
+  bool looksLike(NeckScene other) {
+    if (animates || other.animates) return false;
+    if (dots.length != other.dots.length ||
+        strum != other.strum ||
+        openStrings.length != other.openStrings.length ||
+        mutedStrings.length != other.mutedStrings.length ||
+        openLabels.length != other.openLabels.length) {
+      return false;
+    }
+    for (var i = 0; i < dots.length; i++) {
+      final a = dots[i], b = other.dots[i];
+      if (a.string != b.string ||
+          a.fret != b.fret ||
+          a.finger != b.finger ||
+          a.opacity != b.opacity ||
+          a.approach != b.approach ||
+          a.label != b.label) {
+        return false;
+      }
+    }
+    if (!openStrings.containsAll(other.openStrings) || !mutedStrings.containsAll(other.mutedStrings)) return false;
+    for (final e in openLabels.entries) {
+      if (other.openLabels[e.key] != e.value) return false;
+    }
+    return true;
+  }
 }
 
 class NeckStyle {
-  const NeckStyle({this.leftHanded = false, this.thinOnTop = true, this.highContrast = false});
+  const NeckStyle({this.leftHanded = false, this.thinOnTop = true, this.highContrast = false, this.frets = 12});
 
   final bool leftHanded;
   final bool thinOnTop;
   final bool highContrast;
+
+  /// How many frets the neck shows (12 for the built-in songs, up to 24
+  /// for songs that go higher).
+  final int frets;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NeckStyle &&
+      other.leftHanded == leftHanded &&
+      other.thinOnTop == thinOnTop &&
+      other.highContrast == highContrast &&
+      other.frets == frets;
+
+  @override
+  int get hashCode => Object.hash(leftHanded, thinOnTop, highContrast, frets);
 
   List<Color> get fingerColors => highContrast
       ? const [Color(0xFFFFFFFF), Color(0xFF00B7FF), Color(0xFF00E676), Color(0xFFFFEA00), Color(0xFFFF1744)]
@@ -89,7 +137,8 @@ class NeckStyle {
 /// Layout of the neck inside a given size. Shared by the painter and tap
 /// handling so both agree on where each string and fret is.
 class NeckGeometry {
-  NeckGeometry(this.size, this.style, {this.frets = 12}) {
+  NeckGeometry(this.size, this.style, {int? fretCount})
+      : frets = fretCount ?? style.frets {
     nutWidth = math.max(28.0, size.width * 0.07);
     final right = size.width - math.max(8.0, size.width * 0.01);
     neckLeft = nutWidth;
@@ -185,16 +234,20 @@ class FretboardPainter extends CustomPainter {
         ).createShader(board),
     );
 
-    // Position markers at frets 3, 5, 7, 9 and a double one at 12.
+    // Position markers at frets 3, 5, 7, 9, 15, 17, 19, 21 and double ones at 12 and 24.
     final inlay = Paint()..color = style.highContrast ? const Color(0xFF555555) : const Color(0xFFE9DFC7);
     final midY = (g.top + g.bottom) / 2;
-    final r = g.spacing * 0.18;
-    for (final f in const [3, 5, 7, 9]) {
+    final r = math.min(g.spacing * 0.18, (g.fretX[g.frets] - g.fretX[g.frets - 1]) * 0.3);
+    for (final f in const [3, 5, 7, 9, 15, 17, 19, 21]) {
+      if (f > g.frets) break;
       canvas.drawCircle(Offset(g.mx((g.fretX[f - 1] + g.fretX[f]) / 2), midY), r, inlay);
     }
-    final x12 = g.mx((g.fretX[11] + g.fretX[12]) / 2);
-    canvas.drawCircle(Offset(x12, g.top + g.spacing * 1.5), r, inlay);
-    canvas.drawCircle(Offset(x12, g.bottom - g.spacing * 1.5), r, inlay);
+    for (final f in const [12, 24]) {
+      if (f > g.frets) break;
+      final x = g.mx((g.fretX[f - 1] + g.fretX[f]) / 2);
+      canvas.drawCircle(Offset(x, g.top + g.spacing * 1.5), r, inlay);
+      canvas.drawCircle(Offset(x, g.bottom - g.spacing * 1.5), r, inlay);
+    }
 
     // Nut.
     final nutW = math.max(6.0, g.spacing * 0.22);
@@ -369,8 +422,9 @@ class FretboardPainter extends CustomPainter {
     final size = math.min(g.spacing * 0.42, (g.size.height - g.bottom) * 0.7);
     for (var n = 1; n <= g.frets; n++) {
       final x = g.mx((g.fretX[n - 1] + g.fretX[n]) / 2);
-      final marked = n == 3 || n == 5 || n == 7 || n == 9 || n == 12;
-      _text(canvas, '$n', Offset(x, y), size, marked ? Colors.white70 : Colors.white38);
+      final marked = n == 3 || n == 5 || n == 7 || n == 9 || n == 12 || n == 15 || n == 17 || n == 19 || n == 21 || n == 24;
+      final width = g.fretX[n] - g.fretX[n - 1];
+      _text(canvas, '$n', Offset(x, y), math.min(size, width * 0.55), marked ? Colors.white70 : Colors.white38);
     }
   }
 
@@ -387,7 +441,7 @@ class FretboardPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(FretboardPainter old) => true;
+  bool shouldRepaint(FretboardPainter old) => style != old.style || !scene.looksLike(old.scene);
 }
 
 /// The full-width guitar neck. [onTap] gets the string and fret touched.

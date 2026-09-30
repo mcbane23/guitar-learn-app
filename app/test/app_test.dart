@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:guitar_learn/app.dart';
@@ -53,6 +56,88 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(TextField), findsOneWidget);
+  });
+
+  testWidgets('songs from files: added under My songs, parts, tuning, removal', (tester) async {
+    tester.view.physicalSize = const Size(2400, 1800);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final repo = await tester.runAsync(_repo);
+    final settings = AppSettings.inMemory()..language = AppLanguage.en;
+    var picks = <ImportFile>[
+      ImportFile(name: 'fixture.gp5', bytes: File('test/fixtures/fixture.gp5').readAsBytesSync()),
+      ImportFile(name: 'notes.pdf', bytes: Uint8List.fromList([0x25, 0x50, 0x44, 0x46, 1, 2, 3])),
+    ];
+    await tester.pumpWidget(GuitarApp(
+      settings: settings,
+      songs: repo!,
+      synth: RecordingSynth(),
+      filePicker: () async => picks,
+    ));
+    await tester.pump();
+    expect(find.text('My songs'), findsOneWidget); // the banner inviting to add files
+    expect(find.text('Fixture Song'), findsNothing);
+
+    await tester.tap(find.text('Add songs').first);
+    await tester.pump();
+    await _waitFor(tester, find.text('1 song added'));
+    expect(find.text('notes.pdf'), findsOneWidget);
+    expect(find.text('This kind of file is not supported'), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Fixture Song'), findsWidgets);
+    expect(find.text('Tester'), findsWidgets); // the artist from the file
+    expect(repo.isImported(repo.importedSongs.single.id), isTrue);
+
+    // Open it: the part chooser shows both guitars; the rhythm guitar is in drop D with a capo.
+    await tester.tap(find.text('Fixture Song').first);
+    await _waitFor(tester, find.text('Play'));
+    expect(find.text('Lead Guitar'), findsOneWidget);
+    expect(find.textContaining('Tuning'), findsNothing);
+    await tester.tap(find.text('Lead Guitar'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Rhythm Guitar').last);
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 200)); // the menu closes
+    }
+    expect(find.text('Rhythm Guitar'), findsOneWidget);
+    expect(find.textContaining('Tuning: D A D G B E'), findsOneWidget);
+    expect(find.textContaining('Capo 2'), findsOneWidget);
+    expect(settings.recentSongs, [repo.importedSongs.single.id]);
+
+    // The loop grows from 2 bars to 4, then switches off.
+    await tester.tap(find.byIcon(Icons.repeat_rounded));
+    await tester.pump();
+    expect(find.text('Repeat 2 bars'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.repeat_rounded));
+    await tester.pump();
+    expect(find.text('Repeat 4 bars'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.repeat_rounded));
+    await tester.pump();
+    expect(find.text('Repeat part'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Recently played'), findsOneWidget);
+
+    // Picking nothing does nothing; holding the card removes the song.
+    picks = [];
+    await tester.tap(find.text('Add songs').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Fixture Song'), findsWidgets);
+    await tester.longPress(find.text('Fixture Song').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Remove this song from the device?'), findsOneWidget);
+    await tester.tap(find.text('Remove'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Fixture Song'), findsNothing);
+    expect(repo.importedSongs, isEmpty);
   });
 
   testWidgets('Serbian Cyrillic UI', (tester) async {
@@ -143,9 +228,10 @@ Future<void> _openFromHome(WidgetTester tester, String button) async {
   await tester.pump(const Duration(milliseconds: 500));
 }
 
-/// Lets real async work (loading a song from assets) finish, then waits for [finder].
+/// Lets real async work (loading a song from assets, reading files in the
+/// background) finish, then waits for [finder].
 Future<void> _waitFor(WidgetTester tester, Finder finder) async {
-  for (var i = 0; i < 50 && finder.evaluate().isEmpty; i++) {
+  for (var i = 0; i < 200 && finder.evaluate().isEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
     await tester.pump(const Duration(milliseconds: 100));
   }
