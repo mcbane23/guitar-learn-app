@@ -20,15 +20,25 @@ class ChordsScreen extends StatefulWidget {
 }
 
 class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderStateMixin, LandscapeScreen {
+  /// Redraws the neck while the strings still ring, then stops, so an open
+  /// chord page does not keep the device busy at 60 frames a second.
   late final Ticker _ticker;
-  double _now = 0;
+  final _clock = Stopwatch()..start();
   double _strummedAt = -10;
   String? _selected;
+
+  /// How long the strings glow after a strum.
+  static const _ringSeconds = 1.3;
+
+  double get _now => _clock.elapsedMicroseconds / 1e6;
 
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker((e) => setState(() => _now = e.inMicroseconds / 1e6))..start();
+    _ticker = createTicker((_) {
+      setState(() {});
+      if (_now - _strummedAt > _ringSeconds) _ticker.stop();
+    });
   }
 
   @override
@@ -42,6 +52,7 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
       _selected = shape.name;
       _strummedAt = _now;
     });
+    if (!_ticker.isActive) _ticker.start();
     final synth = AppServices.of(context).synth;
     final strings = shape.playedStrings;
     synth.play([
@@ -85,11 +96,12 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
             },
             mutedStrings: {for (var s = 1; s <= 6; s++) if (!shape.plays(s)) s},
             pluckAge: {
-              for (final (k, s) in shape.playedStrings.indexed) s: age - k * 0.025,
+              for (final (k, s) in shape.playedStrings.indexed)
+                if (age - k * 0.025 < _ringSeconds) s: age - k * 0.025,
             },
             strum: Strum.down,
             strumProgress: age / 0.3,
-            time: _now,
+            time: age,
           );
 
     return Scaffold(

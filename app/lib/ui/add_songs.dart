@@ -335,7 +335,7 @@ class _ResultDialog extends StatelessWidget {
           shrinkWrap: true,
           children: [
             if (picked.isFolder && picked.folderName!.isNotEmpty)
-              line(Icons.folder_rounded, scheme.onSurfaceVariant, t.script(picked.folderName!)),
+              line(Icons.folder_rounded, scheme.onSurfaceVariant, picked.folderName!),
             if (!empty) line(Icons.check_circle_rounded, Colors.green, t.resultAdded(added)),
             if (already > 0) line(Icons.library_music_rounded, scheme.primary, t.resultAlreadyAdded(already)),
             if (failed.isNotEmpty) line(Icons.error_rounded, scheme.error, t.resultFailed(failed.length)),

@@ -19,8 +19,14 @@ class FreePlayScreen extends StatefulWidget {
 }
 
 class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProviderStateMixin, LandscapeScreen {
+  /// Redraws the neck while a string still rings, then stops.
   late final Ticker _ticker;
-  double _now = 0;
+  final _clock = Stopwatch()..start();
+
+  /// How long a touched string glows.
+  static const _ringSeconds = 1.5;
+
+  double get _now => _clock.elapsedMicroseconds / 1e6;
 
   /// Last touch per string: (fret, time).
   final _touches = <int, (int, double)>{};
@@ -62,7 +68,10 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker((e) => setState(() => _now = e.inMicroseconds / 1e6))..start();
+    _ticker = createTicker((_) {
+      setState(() {});
+      if (_touches.values.every((t) => _now - t.$2 > _ringSeconds)) _ticker.stop();
+    });
   }
 
   @override
@@ -76,15 +85,17 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
       SynthNote(midi: standardTuning[string - 1] + fret, string: string, durationMs: 2000),
     ]);
     setState(() => _touches[string] = (fret, _now));
+    if (!_ticker.isActive) _ticker.start();
   }
 
   @override
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     final settings = SettingsScope.of(context);
+    final now = _now;
     final recent = {
       for (final e in _touches.entries)
-        if (_now - e.value.$2 < 1.5) e.key: e.value,
+        if (now - e.value.$2 < _ringSeconds) e.key: e.value,
     };
     final scene = NeckScene(
       dots: [
@@ -94,7 +105,7 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
               string: e.key,
               fret: e.value.$1,
               finger: 0,
-              opacity: (1.5 - (_now - e.value.$2)) / 1.5,
+              opacity: (_ringSeconds - (now - e.value.$2)) / _ringSeconds,
               label: noteName(standardTuning[e.key - 1] + e.value.$1, serbian: t.language.isSerbian),
             ),
       ],
@@ -103,8 +114,8 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
         for (final e in recent.entries)
           if (e.value.$1 == 0) e.key: noteName(standardTuning[e.key - 1], serbian: t.language.isSerbian),
       },
-      pluckAge: {for (final e in recent.entries) e.key: _now - e.value.$2},
-      time: _now,
+      pluckAge: {for (final e in recent.entries) e.key: now - e.value.$2},
+      time: now,
       cursor: _neckFocused ? _cursor : null,
     );
     return Scaffold(
