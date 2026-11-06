@@ -1,5 +1,6 @@
 package com.mcbane23.guitarlearn
 
+import android.content.Intent
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -7,11 +8,13 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var synth: GuitarSynth? = null
+    private var folders: SongFolders? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val s = GuitarSynth(this)
         synth = s
+        folders = SongFolders(this, flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "guitar_learn/synth")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -64,6 +67,11 @@ class MainActivity : FlutterActivity() {
             }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (folders?.onActivityResult(requestCode, resultCode, data) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     override fun onPause() {
         super.onPause()
         synth?.stopAll()
@@ -72,6 +80,8 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         synth?.shutdown()
         synth = null
+        folders?.shutdown()
+        folders = null
         super.onDestroy()
     }
 }

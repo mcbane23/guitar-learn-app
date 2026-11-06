@@ -160,11 +160,16 @@ class SongRepository extends ChangeNotifier {
           ? importFilesInIsolate(request)
           : await compute(importFilesInIsolate, request);
       final dir = _importDir;
+      final results = <ImportOutcome>[];
       for (final o in outcomes) {
         final json = o.song;
-        if (json == null) continue;
+        if (json == null) {
+          results.add(o);
+          continue;
+        }
         final song = Song.fromJson(json);
         final info = SongInfo.fromJson(json);
+        results.add(_imported.containsKey(info.id) ? o.markAlreadyAdded() : o);
         if (dir != null) {
           await dir.create(recursive: true);
           await File('${dir.path}/${_importedFile(info.id)}').writeAsString(jsonEncode(json));
@@ -174,7 +179,7 @@ class SongRepository extends ChangeNotifier {
         _songCache[info.id] = song;
       }
       await _saveImportedIndex();
-      return outcomes;
+      return results;
     } finally {
       importing = false;
       notifyListeners();

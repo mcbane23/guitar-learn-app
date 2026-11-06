@@ -17,6 +17,7 @@ class AppServices extends InheritedWidget {
     required this.songs,
     required this.synth,
     required this.pickFiles,
+    required this.pickFolder,
     required super.child,
   });
 
@@ -26,11 +27,14 @@ class AppServices extends InheritedWidget {
   /// Opens the device's file chooser for song files.
   final SongFilePicker pickFiles;
 
+  /// Opens the device's folder chooser and lists the song files in it.
+  final SongFilePicker pickFolder;
+
   static AppServices of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<AppServices>()!;
 
   @override
   bool updateShouldNotify(AppServices oldWidget) =>
-      songs != oldWidget.songs || synth != oldWidget.synth || pickFiles != oldWidget.pickFiles;
+      songs != oldWidget.songs || synth != oldWidget.synth || pickFiles != oldWidget.pickFiles || pickFolder != oldWidget.pickFolder;
 }
 
 class GuitarApp extends StatelessWidget {
@@ -40,6 +44,7 @@ class GuitarApp extends StatelessWidget {
     required this.songs,
     required this.synth,
     this.filePicker = pickSongFilesFromDevice,
+    this.folderPicker = pickSongFolderFromDevice,
   });
 
   final AppSettings settings;
@@ -48,6 +53,9 @@ class GuitarApp extends StatelessWidget {
 
   /// How song files are chosen (replaced in tests).
   final SongFilePicker filePicker;
+
+  /// How a folder of song files is chosen (replaced in tests).
+  final SongFilePicker folderPicker;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +70,7 @@ class GuitarApp extends StatelessWidget {
             songs: songs,
             synth: synth,
             pickFiles: filePicker,
+            pickFolder: folderPicker,
             child: StringsScope(
               strings: strings,
               child: MaterialApp(

@@ -38,8 +38,15 @@ class ImportFile {
 
 /// What became of one file.
 class ImportOutcome {
-  const ImportOutcome({required this.fileName, this.song, this.error, this.errorCode});
+  const ImportOutcome({required this.fileName, this.song, this.error, this.errorCode, this.alreadyAdded = false});
   final String fileName;
+
+  /// The song was already in "My songs" (the same file added before, or
+  /// twice in one go); it is kept once.
+  final bool alreadyAdded;
+
+  ImportOutcome markAlreadyAdded() =>
+      ImportOutcome(fileName: fileName, song: song, error: error, errorCode: errorCode, alreadyAdded: true);
 
   /// The song JSON, ready to save and play, when the file could be read.
   final Map<String, dynamic>? song;
