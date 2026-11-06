@@ -119,10 +119,24 @@ class Strings {
   String get mySongs => _t('mySongs');
   String get addSongs => _t('addSongs');
   String get addSongsHint => _t('addSongsHint');
-  String readingFiles(int n) => _t('readingFiles', {'n': '$n'});
   String songsAdded(int n) => n == 1 ? _t('oneSongAdded') : _t('songsAdded', {'n': '$n'});
   String filesNotRead(int n) => _t('filesNotRead', {'n': '$n'});
   String get filePickerUnavailable => _t('filePickerUnavailable');
+  String get folderPickerUnavailable => _t('folderPickerUnavailable');
+  String get chooseFiles => _t('chooseFiles');
+  String get chooseFilesHint => _t('chooseFilesHint');
+  String get chooseFolder => _t('chooseFolder');
+  String get chooseFolderHint => _t('chooseFolderHint');
+  String readingFilesProgress(int done, int n) => _t('readingFilesProgress', {'done': '$done', 'n': '$n'});
+  String get stop => _t('stop');
+  String get importDone => _t('importDone');
+  String get noSongFilesInFolder => _t('noSongFilesInFolder');
+  String resultAdded(int n) => _t('resultAdded', {'n': '$n'});
+  String resultAlreadyAdded(int n) => _t('resultAlreadyAdded', {'n': '$n'});
+  String resultFailed(int n) => _t('resultFailed', {'n': '$n'});
+  String resultOtherFiles(int n) => _t('resultOtherFiles', {'n': '$n'});
+  String resultTooMany(int n) => _t('resultTooMany', {'n': '$n'});
+  String resultStopped(int n) => _t('resultStopped', {'n': '$n'});
   String get removeSong => _t('removeSong');
   String get removeSongConfirm => _t('removeSongConfirm');
   String get songRemoved => _t('songRemoved');
@@ -243,12 +257,26 @@ class Strings {
     'back': 'Back',
     'mySongs': 'My songs',
     'addSongs': 'Add songs',
-    'addSongsHint': 'Open your own tabs from this device: Guitar Pro, MIDI, MusicXML or text tabs. You can pick several files at once.',
-    'readingFiles': 'Reading {n} files...',
+    'addSongsHint': 'Open your own tabs from this device: Guitar Pro, MIDI, MusicXML or text tabs. You can pick several files at once or a whole folder.',
     'oneSongAdded': '1 song added',
     'songsAdded': '{n} songs added',
     'filesNotRead': '{n} files could not be read',
     'filePickerUnavailable': 'Choosing files is not possible on this device',
+    'folderPickerUnavailable': 'Choosing a folder is not possible on this device',
+    'chooseFiles': 'Choose files',
+    'chooseFilesHint': 'One song file or several at once',
+    'chooseFolder': 'Choose a folder',
+    'chooseFolderHint': 'Every song file in a folder and its subfolders',
+    'readingFilesProgress': 'Reading files: {done} of {n}',
+    'stop': 'Stop',
+    'importDone': 'Songs added',
+    'noSongFilesInFolder': 'No song files in this folder',
+    'resultAdded': 'New songs in My songs: {n}',
+    'resultAlreadyAdded': 'Already in My songs: {n}',
+    'resultFailed': 'Files that could not be read: {n}',
+    'resultOtherFiles': 'Other files left out (not songs): {n}',
+    'resultTooMany': 'Only the first {n} song files were read',
+    'resultStopped': 'Stopped: {n} files were not read',
     'removeSong': 'Remove from my songs',
     'removeSongConfirm': 'Remove this song from the device?',
     'songRemoved': 'Song removed',
@@ -351,12 +379,26 @@ class Strings {
     'back': 'Nazad',
     'mySongs': 'Moje pesme',
     'addSongs': 'Dodaj pesme',
-    'addSongsHint': 'Otvori svoje tabulature sa ovog uređaja: Guitar Pro, MIDI, MusicXML ili tekst. Možeš izabrati više fajlova odjednom.',
-    'readingFiles': 'Čitam fajlove ({n})...',
+    'addSongsHint': 'Otvori svoje tabulature sa ovog uređaja: Guitar Pro, MIDI, MusicXML ili tekst. Možeš izabrati više fajlova odjednom ili ceo folder.',
     'oneSongAdded': 'Dodata je 1 pesma',
     'songsAdded': 'Dodato pesama: {n}',
     'filesNotRead': 'Fajlova koji nisu mogli da se pročitaju: {n}',
     'filePickerUnavailable': 'Na ovom uređaju nije moguće izabrati fajlove',
+    'folderPickerUnavailable': 'Na ovom uređaju nije moguće izabrati folder',
+    'chooseFiles': 'Izaberi fajlove',
+    'chooseFilesHint': 'Jedan fajl sa pesmom ili više njih odjednom',
+    'chooseFolder': 'Izaberi folder',
+    'chooseFolderHint': 'Sve pesme iz foldera i njegovih podfoldera',
+    'readingFilesProgress': 'Čitam fajlove: {done} od {n}',
+    'stop': 'Zaustavi',
+    'importDone': 'Pesme su dodate',
+    'noSongFilesInFolder': 'U ovom folderu nema fajlova sa pesmama',
+    'resultAdded': 'Novih pesama u mojim pesmama: {n}',
+    'resultAlreadyAdded': 'Već su u mojim pesmama: {n}',
+    'resultFailed': 'Fajlova koji nisu mogli da se pročitaju: {n}',
+    'resultOtherFiles': 'Preskočeni drugi fajlovi (nisu pesme): {n}',
+    'resultTooMany': 'Pročitano je samo prvih {n} fajlova sa pesmama',
+    'resultStopped': 'Zaustavljeno: {n} fajlova nije pročitano',
     'removeSong': 'Ukloni iz mojih pesama',
     'removeSongConfirm': 'Ukloniti ovu pesmu sa uređaja?',
     'songRemoved': 'Pesma je uklonjena',

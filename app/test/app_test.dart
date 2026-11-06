@@ -1,13 +1,14 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:guitar_learn/app.dart';
 import 'package:guitar_learn/audio/synth.dart';
 import 'package:guitar_learn/data/song_repository.dart';
 import 'package:guitar_learn/l10n/strings.dart';
 import 'package:guitar_learn/settings/settings.dart';
+import 'package:guitar_learn/ui/add_songs.dart';
 import 'package:guitar_learn/ui/themes.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -72,14 +73,18 @@ void main() {
       settings: settings,
       songs: repo!,
       synth: RecordingSynth(),
-      filePicker: () async => picks,
+      filePicker: () async => PickedSongs.ofFiles(picks),
     ));
     await tester.pump();
     expect(find.text('Fixture Song'), findsNothing);
 
     await tester.tap(find.text('Add songs').first);
     await tester.pump();
-    await _waitFor(tester, find.text('1 song added'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Choose files'));
+    await tester.pump();
+    await _waitFor(tester, find.text('New songs in My songs: 1'));
+    expect(find.text('Files that could not be read: 1'), findsOneWidget);
     expect(find.text('notes.pdf'), findsOneWidget);
     expect(find.text('This kind of file is not supported'), findsOneWidget);
     await tester.tap(find.text('OK'));
@@ -133,6 +138,9 @@ void main() {
     await tester.tap(find.text('Add songs').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Choose files'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Fixture Song'), findsWidgets);
     await tester.longPress(find.text('Fixture Song').first);
     await tester.pump();
@@ -143,6 +151,85 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Fixture Song'), findsNothing);
     expect(repo.importedSongs, isEmpty);
+  });
+
+  testWidgets('a whole folder at once, chosen with the remote: a summary of every file', (tester) async {
+    tester.view.physicalSize = const Size(2400, 1800);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final repo = await tester.runAsync(_repo);
+    final settings = AppSettings.inMemory()..language = AppLanguage.en;
+    final gp5 = File('test/fixtures/fixture.gp5').readAsBytesSync();
+    final gp3 = File('test/fixtures/fixture.gp3').readAsBytesSync();
+    final reads = <String>[];
+    PickedFile file(String name, Uint8List bytes) => PickedFile(name: name, size: bytes.length, read: () async {
+          reads.add(name);
+          return bytes;
+        });
+    final folder = PickedSongs(
+      folderName: 'Tabs',
+      otherFiles: 2,
+      files: [
+        file('a.gp5', gp5),
+        file('Rock/b.gp3', gp3),
+        file('Rock/copy of a.gp5', gp5), // the same song twice
+        file('broken.gp5', Uint8List.fromList([1, 2, 3])),
+        PickedFile(name: 'locked.mid', read: () async => throw Exception('no access')),
+        for (var i = 0; i < 12; i++) file('empty$i.txt', Uint8List(0)), // more than one batch
+      ],
+    );
+    var filesAsked = 0;
+    await tester.pumpWidget(GuitarApp(
+      settings: settings,
+      songs: repo!,
+      synth: RecordingSynth(),
+      filePicker: () async {
+        filesAsked++;
+        return null;
+      },
+      folderPicker: () async => folder,
+    ));
+    await tester.pump();
+
+    Future<void> press(LogicalKeyboardKey key) async {
+      await tester.sendKeyEvent(key);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    await tester.tap(find.text('Add songs').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    // "Choose files" has the focus; one press down and OK picks the folder.
+    await press(LogicalKeyboardKey.arrowDown);
+    await press(LogicalKeyboardKey.select);
+    await _waitFor(tester, find.text('Songs added'));
+    expect(filesAsked, 0);
+    expect(reads.length, 16); // every file was read, once
+    expect(find.text('Tabs'), findsOneWidget);
+    expect(find.text('New songs in My songs: 2'), findsOneWidget);
+    expect(find.text('Already in My songs: 1'), findsOneWidget);
+    expect(find.text('Files that could not be read: 14'), findsOneWidget);
+    expect(find.text('Other files left out (not songs): 2'), findsOneWidget);
+    expect(find.text('broken.gp5'), findsOneWidget);
+    expect(find.text('locked.mid'), findsOneWidget);
+    expect(find.text('The file is empty'), findsWidgets);
+    expect(repo.importedSongs.length, 2);
+
+    // The list scrolls with the arrows; OK closes the summary.
+    for (var i = 0; i < 20; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 300));
+    for (var i = 0; i < 20; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+    }
+    await tester.pump(const Duration(milliseconds: 300));
+    await press(LogicalKeyboardKey.select);
+    expect(find.text('Songs added'), findsNothing);
+    expect(find.text('Fixture Song'), findsWidgets);
   });
 
   testWidgets('Serbian Cyrillic UI', (tester) async {
