@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app.dart';
 import '../data/search.dart';
@@ -73,15 +74,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   _results(context, t, searchSongs(all, _query.text, difficulty: _difficulty))
                 else ...[
                   if (mine.isNotEmpty)
-                    _section(context, t, t.mySongs, mine, autofocus: true, removable: true, addCard: true)
-                  else
-                    SliverToBoxAdapter(child: _AddSongsBanner(onTap: () => addSongsFlow(context))),
+                    _section(context, t, t.mySongs, mine, autofocus: true, removable: true, addCard: true),
                   if (recent.isNotEmpty) _section(context, t, t.recentlyPlayed, recent, removable: true),
+                  // Beginners land on the easiest songs first.
                   _section(context, t, t.beginner, all.where((s) => s.tags.contains('beginner')).toList(),
                       autofocus: mine.isEmpty),
                   _section(context, t, t.kids, all.where((s) => s.tags.contains('kids')).toList()),
                   _section(context, t, t.serbianFolk, all.where((s) => s.tags.contains('serbian-folk')).toList()),
                   _section(context, t, t.allSongs, all, removable: true),
+                  if (mine.isEmpty) SliverToBoxAdapter(child: _AddSongsBanner(onTap: () => addSongsFlow(context))),
                 ],
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
@@ -138,20 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: TextField(
-              controller: _query,
-              textInputAction: TextInputAction.search,
-              style: const TextStyle(fontSize: 18),
-              decoration: InputDecoration(
-                hintText: t.searchHint,
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _query.text.isEmpty
-                    ? null
-                    : IconButton(icon: const Icon(Icons.clear), onPressed: _query.clear),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: BorderSide.none),
-              ),
-            ),
+            child: _SearchBox(controller: _query, hint: t.searchHint),
           ),
           const SizedBox(width: 16),
           chip(t.all, null),
@@ -244,6 +232,90 @@ class _HomeScreenState extends State<HomeScreen> {
           imported: repo.isImported(songs[i].id),
           onTap: () => _open(songs[i]),
           onLongPress: repo.isImported(songs[i].id) ? () => removeImportedSongFlow(context, songs[i].id) : null,
+        ),
+      ),
+    );
+  }
+}
+
+/// The search field. With a remote, moving through the screen stops on it
+/// like on a button, without opening the keyboard; OK starts typing, and
+/// up or down leaves the field again. Touch works as usual.
+class _SearchBox extends StatefulWidget {
+  const _SearchBox({required this.controller, required this.hint});
+
+  final TextEditingController controller;
+  final String hint;
+
+  @override
+  State<_SearchBox> createState() => _SearchBoxState();
+}
+
+class _SearchBoxState extends State<_SearchBox> {
+  final _stop = FocusNode(debugLabel: 'search');
+  final _field = FocusNode(debugLabel: 'search field', skipTraversal: true);
+
+  @override
+  void initState() {
+    super.initState();
+    _stop.addListener(_changed);
+    _field.addListener(_changed);
+  }
+
+  void _changed() => setState(() {});
+
+  @override
+  void dispose() {
+    _stop.dispose();
+    _field.dispose();
+    super.dispose();
+  }
+
+  KeyEventResult _onStopKey(FocusNode node, KeyEvent e) {
+    if (!_stop.hasPrimaryFocus || e is! KeyDownEvent) return KeyEventResult.ignored;
+    if (isOkKey(e.logicalKey)) {
+      _field.requestFocus();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// Leaves the field in [direction], as if it were a button.
+  void _leave(TraversalDirection direction) {
+    _stop.requestFocus();
+    _stop.focusInDirection(direction);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(28),
+      borderSide: _stop.hasPrimaryFocus ? const BorderSide(color: Colors.white, width: 3) : BorderSide.none,
+    );
+    return Focus(
+      focusNode: _stop,
+      onKeyEvent: _onStopKey,
+      child: CallbackShortcuts(
+        bindings: {
+          const SingleActivator(LogicalKeyboardKey.arrowDown): () => _leave(TraversalDirection.down),
+          const SingleActivator(LogicalKeyboardKey.arrowUp): () => _leave(TraversalDirection.up),
+        },
+        child: TextField(
+          controller: widget.controller,
+          focusNode: _field,
+          textInputAction: TextInputAction.search,
+          style: const TextStyle(fontSize: 18),
+          onSubmitted: (_) => _stop.requestFocus(),
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: widget.controller.text.isEmpty
+                ? null
+                : ExcludeFocus(child: IconButton(icon: const Icon(Icons.clear), onPressed: widget.controller.clear)),
+            filled: true,
+            border: border,
+            enabledBorder: border,
+          ),
         ),
       ),
     );

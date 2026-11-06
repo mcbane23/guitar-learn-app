@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import '../app.dart';
 import '../audio/synth.dart';
@@ -23,6 +24,40 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
 
   /// Last touch per string: (fret, time).
   final _touches = <int, (int, double)>{};
+
+  /// Where the remote's arrows point: string 1-6 and fret 0-12.
+  var _cursor = (3, 0);
+  bool _neckFocused = false;
+
+  static const _frets = 12;
+
+  /// Arrows move along the neck as it is drawn on screen; OK plays the note.
+  KeyEventResult _onKey(FocusNode node, KeyEvent e) {
+    if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+    final settings = SettingsScope.of(context);
+    final key = e.logicalKey;
+    final (string, fret) = _cursor;
+    if (isOkKey(key)) {
+      if (e is KeyDownEvent) _tap(string, fret);
+      return KeyEventResult.handled;
+    }
+    // Screen rows: the thin string (1) is on top unless the setting flips it.
+    final down = settings.thinStringOnTop ? 1 : -1;
+    // Frets grow to the right, or to the left for left-handed players.
+    final right = settings.leftHanded ? -1 : 1;
+    int? s, f;
+    if (key == LogicalKeyboardKey.arrowUp) s = string - down;
+    if (key == LogicalKeyboardKey.arrowDown) s = string + down;
+    if (key == LogicalKeyboardKey.arrowRight) f = fret + right;
+    if (key == LogicalKeyboardKey.arrowLeft) f = fret - right;
+    if (s == null && f == null) return KeyEventResult.ignored;
+    if (s != null && (s < 1 || s > 6)) {
+      // Past the top row: let the focus go up to the back button.
+      return key == LogicalKeyboardKey.arrowUp ? KeyEventResult.ignored : KeyEventResult.handled;
+    }
+    setState(() => _cursor = (s ?? string, (f ?? fret).clamp(0, _frets)));
+    return KeyEventResult.handled;
+  }
 
   @override
   void initState() {
@@ -70,6 +105,7 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
       },
       pluckAge: {for (final e in recent.entries) e.key: _now - e.value.$2},
       time: _now,
+      cursor: _neckFocused ? _cursor : null,
     );
     return Scaffold(
       body: SafeArea(
@@ -79,7 +115,6 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
               padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
               child: Row(children: [
                 IconButton(
-                  autofocus: true,
                   tooltip: t.back,
                   icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () => Navigator.pop(context),
@@ -92,14 +127,19 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
               ]),
             ),
             Expanded(
-              child: FretboardView(
-                scene: scene,
-                style: NeckStyle(
-                  leftHanded: settings.leftHanded,
-                  thinOnTop: settings.thinStringOnTop,
-                  highContrast: settings.highContrast,
+              child: Focus(
+                autofocus: true,
+                onKeyEvent: _onKey,
+                onFocusChange: (f) => setState(() => _neckFocused = f),
+                child: FretboardView(
+                  scene: scene,
+                  style: NeckStyle(
+                    leftHanded: settings.leftHanded,
+                    thinOnTop: settings.thinStringOnTop,
+                    highContrast: settings.highContrast,
+                  ),
+                  onTap: _tap,
                 ),
-                onTap: _tap,
               ),
             ),
           ],

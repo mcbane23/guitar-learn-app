@@ -1,20 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// The OK button: the center of a TV remote's arrows, or Enter on a keyboard.
+bool isOkKey(LogicalKeyboardKey key) =>
+    key == LogicalKeyboardKey.select ||
+    key == LogicalKeyboardKey.enter ||
+    key == LogicalKeyboardKey.numpadEnter ||
+    key == LogicalKeyboardKey.gameButtonA;
+
+const _screen = MethodChannel('guitar_learn/screen');
+
+/// Keeps the screen from turning off (or the TV screensaver from starting).
+void keepScreenOn(bool on) {
+  _screen.invokeMethod<void>('keepOn', {'on': on}).catchError((Object _) {
+    // Not available here (e.g. widget tests); nothing to do.
+  });
+}
+
 /// Keeps a screen in landscape and full screen while it is open
-/// (the neck needs the whole width).
+/// (the neck needs the whole width), and keeps the screen awake.
 mixin LandscapeScreen<T extends StatefulWidget> on State<T> {
   @override
   void initState() {
     super.initState();
     SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    keepScreenOn(true);
   }
 
   @override
   void dispose() {
     SystemChrome.setPreferredOrientations(const []);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    keepScreenOn(false);
     super.dispose();
   }
 }
@@ -90,7 +108,7 @@ class LabeledToggle extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool selected;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +127,7 @@ class LabeledToggle extends StatelessWidget {
               foregroundColor: selected ? scheme.onPrimary : null,
             ),
           ),
-          Text(label, style: const TextStyle(fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(label, style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

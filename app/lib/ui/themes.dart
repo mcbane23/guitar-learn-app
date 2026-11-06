@@ -78,19 +78,47 @@ ThemeData buildTheme([AppColorTheme theme = AppColorTheme.classic]) {
     );
   }
   final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+  // With a TV remote the only way to know where you are is the focus, so
+  // every button gets a thick white outline when it is selected.
+  final focusRing = ButtonStyle(side: _focusSide, overlayColor: _focusOverlay);
   return base.copyWith(
     scaffoldBackgroundColor: p.background,
     visualDensity: VisualDensity.comfortable,
-    focusColor: Colors.white.withValues(alpha: 0.18),
+    focusColor: Colors.white.withValues(alpha: 0.24),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(64, 56),
         textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         padding: const EdgeInsets.symmetric(horizontal: 20),
-      ),
+      ).merge(focusRing),
     ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(textStyle: const TextStyle(fontSize: 18)).merge(focusRing),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: focusRing),
     iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(minimumSize: const Size(52, 52), iconSize: 28),
+      style: IconButton.styleFrom(minimumSize: const Size(52, 52), iconSize: 28).merge(focusRing),
     ),
+    segmentedButtonTheme: SegmentedButtonThemeData(style: ButtonStyle(overlayColor: _focusOverlay)),
+    chipTheme: base.chipTheme.copyWith(side: const _ChipFocusSide()),
   );
+}
+
+const _ring = BorderSide(color: Colors.white, width: 3, strokeAlign: BorderSide.strokeAlignOutside);
+
+final _focusSide = WidgetStateProperty.resolveWith<BorderSide?>(
+  (states) => states.contains(WidgetState.focused) ? _ring : null,
+);
+
+final _focusOverlay = WidgetStateProperty.resolveWith<Color?>(
+  (states) => states.contains(WidgetState.focused) ? Colors.white.withValues(alpha: 0.22) : null,
+);
+
+/// Chips get the same white outline when selected with the remote.
+class _ChipFocusSide extends WidgetStateBorderSide {
+  const _ChipFocusSide();
+
+  @override
+  BorderSide? resolve(Set<WidgetState> states) =>
+      states.contains(WidgetState.focused) ? _ring : const BorderSide(color: Colors.white24);
 }

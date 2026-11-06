@@ -39,6 +39,7 @@ class NeckScene {
     this.strumProgress = 0,
     this.pulse = false,
     this.time = 0,
+    this.cursor,
   });
 
   final List<NeckDot> dots;
@@ -66,6 +67,10 @@ class NeckScene {
   /// Seconds, for animations.
   final double time;
 
+  /// The string and fret picked with the remote's arrows (fret 0 = open
+  /// string), drawn as a white ring. Null when there is none.
+  final (int string, int fret)? cursor;
+
   /// Whether something on the neck is moving (glowing strings, a strum
   /// arrow, pulsing dots), so a new frame would look different.
   bool get animates => pluckAge.isNotEmpty || pulse || (strum != null && strumProgress < 1);
@@ -78,7 +83,8 @@ class NeckScene {
         strum != other.strum ||
         openStrings.length != other.openStrings.length ||
         mutedStrings.length != other.mutedStrings.length ||
-        openLabels.length != other.openLabels.length) {
+        openLabels.length != other.openLabels.length ||
+        cursor != other.cursor) {
       return false;
     }
     for (var i = 0; i < dots.length; i++) {
@@ -215,7 +221,24 @@ class FretboardPainter extends CustomPainter {
     for (final d in scene.dots) {
       _drawDot(canvas, g, d);
     }
+    _drawCursor(canvas, g);
     _drawFretNumbers(canvas, g);
+  }
+
+  void _drawCursor(Canvas canvas, NeckGeometry g) {
+    final cursor = scene.cursor;
+    if (cursor == null) return;
+    final (string, fret) = cursor;
+    final c = Offset(fret <= 0 ? g.mx(g.nutWidth * 0.45) : g.fretCenterX(fret), g.stringY(string));
+    final r = fret <= 0 ? math.min(g.spacing * 0.42, g.nutWidth * 0.45) : g.dotRadius(fret) * 1.1;
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(3.0, r * 0.18)
+        ..color = Colors.white,
+    );
   }
 
   void _drawWood(Canvas canvas, NeckGeometry g) {
