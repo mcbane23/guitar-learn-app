@@ -472,6 +472,140 @@ SONGS = [
         """,
         "chords": "Am:4 E7:4 Am:4 C:4  Am:4 E7:4 Am:4 C:4",
     },
+    {
+        "id": "brahms-lullaby",
+        "title": {"en": "Brahms' Lullaby (Cradle Song)", "sr": "Bramsova uspavanka"},
+        "artist": "Johannes Brahms", "source": "Wiegenlied, Op. 49 No. 4 (1868); Brahms died 1897",
+        "difficulty": "easy", "tags": ["classical", "kids"], "tempo": 84, "timeSignature": [3, 4],
+        "melody": """
+            r:2 E3:0.5 E3:0.5
+            G3:2 E3:0.5 E3:0.5  G3:2 E3:0.5 G3:0.5  C4:1 B3:1 A3:1  A3:1 G3:1 D3:0.5 E3:0.5
+            F3:1 D3:1 D3:0.5 E3:0.5  F3:2 D3:0.5 F3:0.5  B3:0.5 A3:0.5 G3:1 B3:1  C4:2 C3:0.5 C3:0.5
+            C4:2 A3:0.5 F3:0.5  G3:2 E3:0.5 C3:0.5  F3:1 G3:1 A3:1  G3:2 C3:0.5 C3:0.5
+            C4:2 A3:0.5 F3:0.5  G3:2 E3:0.5 C3:0.5  F3:1 E3:1 D3:1  C3:3
+        """,
+        "chords": "C:3  C:3 C:3 G:3 G7:3  G7:3 G7:3 G7:3 C:3  F:3 C:3 G7:3 C:3  F:3 C:3 G7:3 C:3",
+    },
+    {
+        "id": "oh-susanna",
+        "title": {"en": "Oh! Susanna", "sr": "O, Suzana"},
+        "artist": "Stephen Foster", "source": "Published 1848; Foster died 1864",
+        "difficulty": "easy", "tags": ["folk", "beginner"], "tempo": 110, "timeSignature": [4, 4],
+        "melody": """
+            r:3 C3:0.5 D3:0.5
+            E3:1 G3:1 G3:1.5 A3:0.5  G3:1 E3:1 C3:1.5 D3:0.5  E3:1 E3:1 D3:1 C3:1  D3:3 C3:0.5 D3:0.5
+            E3:1 G3:1 G3:1.5 A3:0.5  G3:1 E3:1 C3:1.5 D3:0.5  E3:1 E3:1 D3:1 D3:1  C3:4
+            F3:2 F3:2  A3:1 A3:2 A3:1  G3:1 G3:1 E3:1 C3:1  D3:3 C3:0.5 D3:0.5
+            E3:1 G3:1 G3:1.5 A3:0.5  G3:1 E3:1 C3:1.5 D3:0.5  E3:1 E3:1 D3:1 D3:1  C3:4
+        """,
+        "chords": """
+            C:4
+            C:4 C:4 C:4 G:4  C:4 C:4 G:4 C:4
+            F:4 C:4 C:4 G:4  C:4 C:4 G:4 C:4
+        """,
+    },
+    {
+        "id": "o-christmas-tree",
+        "title": {"en": "O Christmas Tree (O Tannenbaum)", "sr": "O jelko (O Tannenbaum)"},
+        "artist": TRAD, "source": "Traditional German melody; words by Ernst Anschütz (1824)",
+        "difficulty": "medium", "tags": ["holidays", "kids"], "tempo": 90, "timeSignature": [3, 4],
+        "melody": """
+            r:2 D3:1
+            G3:0.75 G3:0.25 G3:1.5 A3:0.5  B3:0.75 B3:0.25 B3:1.5 B3:0.5  A3:0.5 B3:0.5 C4:1 F#3:1  A3:1 G3:1 D4:1
+            D4:0.5 B3:0.5 E4:1.5 D4:0.5  D4:0.5 C4:0.5 C4:1.5 C4:0.5  C4:0.5 A3:0.5 D4:1.5 C4:0.5  C4:0.5 B3:0.5 B3:1 D3:1
+            G3:0.75 G3:0.25 G3:1.5 A3:0.5  B3:0.75 B3:0.25 B3:1.5 B3:0.5  A3:0.5 B3:0.5 C4:1 F#3:1  A3:1 G3:2
+        """,
+        "chords": "G:3  G:3 G:3 D7:3 G:3  G:3 D7:3 D7:3 G:3  G:3 G:3 D7:3 G:3",
+    },
+    {
+        "id": "deck-the-halls",
+        "title": {"en": "Deck the Halls", "sr": "Okitite dvorane"},
+        "artist": TRAD, "source": "Traditional Welsh melody 'Nos Galan' (18th century)",
+        "difficulty": "medium", "tags": ["holidays", "kids"], "tempo": 110, "timeSignature": [4, 4],
+        "melody": """
+            G3:1.5 F3:0.5 E3:1 D3:1  C3:1 D3:1 E3:1 C3:1  D3:0.5 E3:0.5 F3:0.5 D3:0.5 E3:1.5 D3:0.5  C3:1 B2:1 C3:2
+            G3:1.5 F3:0.5 E3:1 D3:1  C3:1 D3:1 E3:1 C3:1  D3:0.5 E3:0.5 F3:0.5 D3:0.5 E3:1.5 D3:0.5  C3:1 B2:1 C3:2
+            D3:1.5 E3:0.5 F3:1 D3:1  E3:1.5 F3:0.5 G3:1 D3:1  E3:0.5 F#3:0.5 G3:1 A3:0.5 B3:0.5 C4:1  B3:1 A3:1 G3:2
+            G3:1.5 F3:0.5 E3:1 D3:1  C3:1 D3:1 E3:1 C3:1  A3:0.5 A3:0.5 A3:0.5 A3:0.5 G3:1.5 F3:0.5  E3:1 D3:1 C3:2
+        """,
+        "chords": """
+            C:4 C:4 G7:4 G:2 C:2
+            C:4 C:4 G7:4 G:2 C:2
+            G7:4 C:2 G:2 G:2 D7:2 D7:2 G:2
+            C:4 C:4 F:2 C:2 G:2 C:2
+        """,
+    },
+    {
+        "id": "korobeiniki",
+        "title": {"en": "Korobeiniki (The Peddlers)", "sr": "Korobejnici"},
+        "artist": "Traditional Russian",
+        "source": "Russian folk melody (19th century) to Nekrasov's poem (1861); the folk tune only, not a game soundtrack",
+        "difficulty": "medium", "tags": ["folk"], "tempo": 120, "timeSignature": [4, 4],
+        "melody": """
+            E3:1 B2:0.5 C3:0.5 D3:1 C3:0.5 B2:0.5  A2:1 A2:0.5 C3:0.5 E3:1 D3:0.5 C3:0.5
+            B2:1.5 C3:0.5 D3:1 E3:1  C3:1 A2:1 A2:2
+            r:0.5 D3:1 F3:0.5 A3:1 G3:0.5 F3:0.5  E3:1.5 C3:0.5 E3:1 D3:0.5 C3:0.5
+            B2:1 B2:0.5 C3:0.5 D3:1 E3:1  C3:1 A2:1 A2:2
+        """,
+        "chords": "E7:4 Am:4 E7:4 Am:4  Dm:4 C:4 E7:4 Am:4",
+    },
+    {
+        "id": "new-world-largo",
+        "title": {"en": "Largo from the New World Symphony", "sr": "Largo iz Novog sveta"},
+        "artist": "Antonín Dvořák", "source": "Symphony No. 9 'From the New World' (1893), Largo theme; Dvořák died 1904",
+        "difficulty": "easy", "tags": ["classical", "beginner"], "tempo": 60, "timeSignature": [4, 4],
+        "melody": """
+            E3:1.5 G3:0.5 G3:2  E3:1.5 D3:0.5 C3:2  D3:1 E3:1 G3:1 E3:1  D3:4
+            E3:1.5 G3:0.5 G3:2  E3:1.5 D3:0.5 C3:2  D3:1 E3:1 D3:1.5 C3:0.5  C3:4
+        """,
+        "chords": "C:4 C:4 G:4 G:4  C:4 C:4 G:4 C:4",
+    },
+    {
+        "id": "good-king-wenceslas",
+        "title": {"en": "Good King Wenceslas", "sr": "Dobri kralj Vaclav"},
+        "artist": TRAD, "source": "Melody 'Tempus adest floridum' from Piae Cantiones (1582); words by J. M. Neale (1853)",
+        "difficulty": "easy", "tags": ["holidays"], "tempo": 110, "timeSignature": [4, 4],
+        "melody": """
+            G3:1 G3:1 G3:1 A3:1  G3:1 G3:1 D3:2  E3:1 D3:1 E3:1 F#3:1  G3:2 G3:2
+            G3:1 G3:1 G3:1 A3:1  G3:1 G3:1 D3:2  E3:1 D3:1 E3:1 F#3:1  G3:2 G3:2
+            D4:1 C4:1 B3:1 A3:1  B3:1 A3:1 G3:2  E3:1 D3:1 E3:1 F#3:1  G3:2 G3:2
+            D3:1 D3:1 E3:1 F#3:1  G3:1 G3:1 A3:2  D4:1 C4:1 B3:1 A3:1  G3:2 C4:2  G3:4
+        """,
+        "chords": """
+            G:4 G:4 C:2 D:2 G:4
+            G:4 G:4 C:2 D:2 G:4
+            G:2 D:2 G:4 C:2 D:2 G:4
+            G:2 D:2 G:2 D:2 G:2 D:2 G:2 C:2 G:4
+        """,
+    },
+    {
+        "id": "lightly-row",
+        "title": {"en": "Lightly Row (Hänschen klein)", "sr": "Lagano veslaj (Mali Hans)"},
+        "artist": TRAD, "source": "Traditional German folk melody; words by Franz Wiedemann (1860)",
+        "difficulty": "easy", "tags": ["kids", "beginner"], "tempo": 100, "timeSignature": [4, 4],
+        "melody": """
+            G3:1 E3:1 E3:2  F3:1 D3:1 D3:2  C3:1 D3:1 E3:1 F3:1  G3:1 G3:1 G3:2
+            G3:1 E3:1 E3:2  F3:1 D3:1 D3:2  C3:1 E3:1 G3:1 G3:1  C3:4
+            D3:1 D3:1 D3:1 D3:1  D3:1 E3:1 F3:2  E3:1 E3:1 E3:1 E3:1  E3:1 F3:1 G3:2
+            G3:1 E3:1 E3:2  F3:1 D3:1 D3:2  C3:1 E3:1 G3:1 G3:1  C3:4
+        """,
+        "chords": """
+            C:4 G7:4 C:4 C:4  C:4 G7:4 C:4 C:4
+            G7:4 G7:4 C:4 C:4  C:4 G7:4 C:4 C:4
+        """,
+    },
+    {
+        "id": "all-my-little-ducklings",
+        "title": {"en": "All My Little Ducklings (Alle meine Entchen)", "sr": "Sve moje patkice"},
+        "artist": TRAD, "source": "Traditional German children's song (19th century)",
+        "difficulty": "easy", "tags": ["kids", "beginner"], "tempo": 100, "timeSignature": [4, 4],
+        "melody": """
+            C3:1 D3:1 E3:1 F3:1  G3:2 G3:2  A3:1 A3:1 A3:1 A3:1  G3:4
+            A3:1 A3:1 A3:1 A3:1  G3:4  F3:1 F3:1 F3:1 F3:1  E3:2 E3:2
+            D3:1 D3:1 D3:1 D3:1  C3:4
+        """,
+        "chords": "C:4 C:4 F:4 C:4  F:4 C:4 F:4 C:4  G7:4 C:4",
+    },
 ]
 
 
