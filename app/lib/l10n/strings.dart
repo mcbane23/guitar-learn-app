@@ -62,6 +62,9 @@ class Strings {
   String get loop => _t('loop');
   String get waitMode => _t('waitMode');
   String get next => _t('next');
+  String get slower => _t('slower');
+  String get faster => _t('faster');
+  String get more => _t('more');
   String get speed => _t('speed');
   String get soundSong => _t('soundSong');
   String get soundAccompany => _t('soundAccompany');
@@ -176,7 +179,7 @@ class Strings {
     'noResults': 'No songs found',
     'chords': 'Chords',
     'freePlay': 'Free play',
-    'freePlayHint': 'Tap anywhere on the neck to hear that note',
+    'freePlayHint': 'Tap the neck, or move with the remote arrows and press OK, to hear a note',
     'settings': 'Settings',
     'play': 'Play',
     'pause': 'Pause',
@@ -184,6 +187,9 @@ class Strings {
     'loop': 'Repeat part',
     'waitMode': 'Wait for me',
     'next': 'Next',
+    'slower': 'Slower',
+    'faster': 'Faster',
+    'more': 'More',
     'speed': 'Speed',
     'soundSong': 'Play song',
     'soundAccompany': 'Accompany me',
@@ -281,7 +287,7 @@ class Strings {
     'noResults': 'Nema pesama',
     'chords': 'Akordi',
     'freePlay': 'Slobodno sviranje',
-    'freePlayHint': 'Dodirni vrat gitare da čuješ taj ton',
+    'freePlayHint': 'Dodirni vrat gitare, ili se pomeraj strelicama na daljinskom i pritisni OK, da čuješ ton',
     'settings': 'Podešavanja',
     'play': 'Sviraj',
     'pause': 'Pauza',
@@ -289,6 +295,9 @@ class Strings {
     'loop': 'Ponavljaj deo',
     'waitMode': 'Čekaj me',
     'next': 'Dalje',
+    'slower': 'Sporije',
+    'faster': 'Brže',
+    'more': 'Više',
     'speed': 'Brzina',
     'soundSong': 'Sviraj pesmu',
     'soundAccompany': 'Prati me',

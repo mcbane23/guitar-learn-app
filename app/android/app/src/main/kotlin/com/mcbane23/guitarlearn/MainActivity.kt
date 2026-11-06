@@ -1,5 +1,6 @@
 package com.mcbane23.guitarlearn
 
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -40,6 +41,22 @@ class MainActivity : FlutterActivity() {
                     }
                     "setVolume" -> {
                         s.volume = call.argument<Number>("volume")?.toFloat() ?: 1f
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        // Keeps the screen (and the TV) from going dark while a song is open:
+        // a beginner often watches the neck for a long time without touching anything.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "guitar_learn/screen")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "keepOn" -> {
+                        if (call.argument<Boolean>("on") == true) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        }
                         result.success(null)
                     }
                     else -> result.notImplemented()

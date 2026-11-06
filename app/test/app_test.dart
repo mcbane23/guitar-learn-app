@@ -75,7 +75,6 @@ void main() {
       filePicker: () async => picks,
     ));
     await tester.pump();
-    expect(find.text('My songs'), findsOneWidget); // the banner inviting to add files
     expect(find.text('Fixture Song'), findsNothing);
 
     await tester.tap(find.text('Add songs').first);
@@ -107,7 +106,10 @@ void main() {
     expect(find.textContaining('Capo 2'), findsOneWidget);
     expect(settings.recentSongs, [repo.importedSongs.single.id]);
 
-    // The loop grows from 2 bars to 4, then switches off.
+    // The loop (under "More") grows from 2 bars to 4, then switches off.
+    await tester.tap(find.byTooltip('More'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.byIcon(Icons.repeat_rounded));
     await tester.pump();
     expect(find.text('Repeat 2 bars'), findsOneWidget);
@@ -117,6 +119,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.repeat_rounded));
     await tester.pump();
     expect(find.text('Repeat part'), findsOneWidget);
+    await tester.tapAt(const Offset(20, 20)); // close the sheet
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pump();

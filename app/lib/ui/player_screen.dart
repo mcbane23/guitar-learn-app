@@ -355,17 +355,6 @@ class _Neck extends StatelessWidget {
                   ]),
                 ),
               ),
-            if (controller.waiting)
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: FilledButton.icon(
-                  autofocus: true,
-                  onPressed: controller.next,
-                  icon: const Icon(Icons.skip_next_rounded),
-                  label: Text(t.next),
-                ),
-              ),
             if (controller.finished)
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -447,10 +436,15 @@ class _Progress extends StatelessWidget {
   }
 }
 
+/// The buttons under the neck. Only what a beginner needs is shown; the
+/// rest is behind "More". The big button keeps the remote's focus the whole
+/// time: it plays, pauses, and in "Wait for me" moves on to the next note.
 class _Controls extends StatelessWidget {
   const _Controls({required this.controller});
 
   final PlaybackController controller;
+
+  static const _speedStep = 0.05;
 
   @override
   Widget build(BuildContext context) {
@@ -459,70 +453,123 @@ class _Controls extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final c = controller;
-        final (soundIcon, soundLabel) = switch (c.soundMode) {
-          SoundMode.song => (Icons.volume_up_rounded, t.soundSong),
-          SoundMode.accompany => (Icons.queue_music_rounded, t.soundAccompany),
-          SoundMode.mute => (Icons.volume_off_rounded, t.soundMute),
-        };
+        final (mainIcon, mainLabel, mainAction) = c.waiting
+            ? (Icons.skip_next_rounded, t.next, c.next)
+            : c.isPlaying
+                ? (Icons.pause_rounded, t.pause, c.pause)
+                : (Icons.play_arrow_rounded, t.play, c.play);
+        final percent = (c.speed * 100).round();
         return Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
           child: Row(
             children: [
               SizedBox(
-                width: 150,
+                width: 170,
                 child: FilledButton.icon(
                   autofocus: true,
-                  onPressed: c.togglePlay,
-                  icon: Icon(c.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 32),
-                  label: Text(c.isPlaying ? t.pause : t.play),
+                  onPressed: mainAction,
+                  icon: Icon(mainIcon, size: 32),
+                  label: Text(mainLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
                 ),
               ),
               const SizedBox(width: 8),
               LabeledToggle(icon: Icons.replay_rounded, label: t.restart, selected: false, onPressed: c.restart),
-              LabeledToggle(
-                icon: Icons.repeat_rounded,
-                label: c.loop == null ? t.loop : t.loopBars(c.loopBars),
-                selected: c.loop != null,
-                onPressed: c.toggleLoop,
-              ),
               LabeledToggle(
                 icon: Icons.front_hand_rounded,
                 label: t.waitMode,
                 selected: c.waitMode,
                 onPressed: () => c.setWaitMode(!c.waitMode),
               ),
+              const Spacer(),
               LabeledToggle(
-                icon: soundIcon,
-                label: soundLabel,
-                selected: c.soundMode != SoundMode.mute,
-                onPressed: c.nextSoundMode,
-              ),
-              LabeledToggle(
-                icon: Icons.timer_outlined,
-                label: t.metronome,
-                selected: c.metronome,
-                onPressed: () => c.setMetronome(!c.metronome),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.speed_rounded),
-              Expanded(
-                child: Slider(
-                  value: c.speed,
-                  min: PlaybackController.minSpeed,
-                  max: 1,
-                  divisions: 15,
-                  label: '${(c.speed * 100).round()}%',
-                  onChanged: c.setSpeed,
-                ),
+                icon: Icons.remove_rounded,
+                label: t.slower,
+                selected: false,
+                onPressed: c.speed <= PlaybackController.minSpeed + 1e-9 ? null : () => c.setSpeed(c.speed - _speedStep),
               ),
               SizedBox(
-                width: 56,
-                child: Text('${(c.speed * 100).round()}%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                width: 72,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.speed_rounded, size: 20),
+                  Text('$percent%', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                ]),
+              ),
+              LabeledToggle(
+                icon: Icons.add_rounded,
+                label: t.faster,
+                selected: false,
+                onPressed: c.speed >= 1 - 1e-9 ? null : () => c.setSpeed(c.speed + _speedStep),
+              ),
+              const SizedBox(width: 12),
+              LabeledToggle(
+                icon: Icons.tune_rounded,
+                label: t.more,
+                selected: c.loop != null || c.metronome || c.soundMode != SoundMode.song,
+                onPressed: () => _showMore(context),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  /// Sound, click and repeat: useful later, not needed for the first song.
+  void _showMore(BuildContext context) {
+    final t = Strings.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) {
+          final c = controller;
+          final scheme = Theme.of(context).colorScheme;
+          Widget option(IconData icon, String label, bool selected, VoidCallback onTap, {bool autofocus = false}) =>
+              ListTile(
+                autofocus: autofocus,
+                leading: Icon(icon),
+                title: Text(label, style: const TextStyle(fontSize: 18)),
+                trailing: Icon(
+                  selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: selected ? scheme.primary : null,
+                ),
+                onTap: onTap,
+              );
+          return SafeArea(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(bottom: 12),
+              children: [
+                for (final (i, m) in c.soundModes.indexed)
+                  option(
+                    switch (m) {
+                      SoundMode.song => Icons.volume_up_rounded,
+                      SoundMode.accompany => Icons.queue_music_rounded,
+                      SoundMode.mute => Icons.volume_off_rounded,
+                    },
+                    switch (m) {
+                      SoundMode.song => t.soundSong,
+                      SoundMode.accompany => t.soundAccompany,
+                      SoundMode.mute => t.soundMute,
+                    },
+                    c.soundMode == m,
+                    () => c.setSoundMode(m),
+                    autofocus: i == 0,
+                  ),
+                const Divider(),
+                option(Icons.timer_outlined, t.metronome, c.metronome, () => c.setMetronome(!c.metronome)),
+                option(
+                  Icons.repeat_rounded,
+                  c.loop == null ? t.loop : t.loopBars(c.loopBars),
+                  c.loop != null,
+                  c.toggleLoop,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
