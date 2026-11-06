@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../import/score.dart' show ImportError;
+import '../models/song.dart' show SongInfo;
 
 /// UI languages. Serbian is written in Latin script by default, with Cyrillic
 /// available in settings (generated from the Latin text).
@@ -37,6 +38,15 @@ class Strings {
   /// Text that comes from song data (titles) in the chosen script.
   String script(String text) => language == AppLanguage.srCyrl ? toCyrillic(text) : text;
 
+  /// A song's title in the app language. Only a Serbian title is written in
+  /// Cyrillic: an English title, or one that came from a file, stays as it
+  /// is instead of being spelled out letter by letter.
+  String songTitle(SongInfo song) {
+    final sr = song.title['sr'];
+    if (language.isSerbian && sr != null) return script(sr);
+    return song.titleFor(language.songLang);
+  }
+
   String get appTitle => _t('appTitle');
   String get searchHint => _t('searchHint');
   String get all => _t('all');
@@ -72,6 +82,8 @@ class Strings {
   String get metronome => _t('metronome');
   String get easyMode => _t('easyMode');
   String get fullMode => _t('fullMode');
+  String get easyModeShort => _t('easyModeShort');
+  String get fullModeShort => _t('fullModeShort');
   String get getReady => _t('getReady');
   String get wellDone => _t('wellDone');
   String get playAgain => _t('playAgain');
@@ -211,6 +223,8 @@ class Strings {
     'metronome': 'Click',
     'easyMode': 'Easy: chords',
     'fullMode': 'Full: every note',
+    'easyModeShort': 'Chords',
+    'fullModeShort': 'Notes',
     'getReady': 'Get ready',
     'wellDone': 'Well done!',
     'playAgain': 'Play again',
@@ -333,6 +347,8 @@ class Strings {
     'metronome': 'Takt',
     'easyMode': 'Lako: akordi',
     'fullMode': 'Sve: svaki ton',
+    'easyModeShort': 'Akordi',
+    'fullModeShort': 'Tonovi',
     'getReady': 'Spremi se',
     'wellDone': 'Bravo!',
     'playAgain': 'Sviraj ponovo',

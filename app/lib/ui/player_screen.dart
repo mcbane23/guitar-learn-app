@@ -26,16 +26,42 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen> with SingleTickerProviderStateMixin, LandscapeScreen {
+class _PlayerScreenState extends State<PlayerScreen>
+    with SingleTickerProviderStateMixin, LandscapeScreen, WidgetsBindingObserver {
   PlaybackController? _controller;
   Object? _error;
+
+  /// Drives the neck animation (glowing strings, pulsing dots). It runs while
+  /// the song plays or something still moves, and stops a moment after the
+  /// song is paused, so a song left open does not keep the device busy.
   late final Ticker _ticker;
+  final _clock = Stopwatch()..start();
   final _time = ValueNotifier<double>(0);
+  double _lastChange = 0;
 
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker((elapsed) => _time.value = elapsed.inMicroseconds / 1e6)..start();
+    WidgetsBinding.instance.addObserver(this);
+    _ticker = createTicker((_) {
+      _time.value = _clock.elapsedMicroseconds / 1e6;
+      final c = _controller;
+      if (c != null && !c.isPlaying && !c.waiting && _time.value - _lastChange > 1.5) _ticker.stop();
+    })
+      ..start();
+  }
+
+  void _controllerChanged() {
+    _lastChange = _clock.elapsedMicroseconds / 1e6;
+    if (!_ticker.isActive) _ticker.start();
+  }
+
+  /// The song stops when the app leaves the screen (Home button, a phone
+  /// call, another app on the TV). Without this the sequencer would keep
+  /// feeding the synthesizer and the guitar would play on in the background.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) _controller?.pause();
   }
 
   @override
@@ -50,7 +76,7 @@ class _PlayerScreenState extends State<PlayerScreen> with SingleTickerProviderSt
     try {
       final song = await services.songs.loadSong(widget.songId);
       if (!mounted) return;
-      setState(() => _controller = _newController(song, speed: settings.defaultSpeed));
+      setState(() => _controller = _newController(song, speed: settings.defaultSpeed)..addListener(_controllerChanged));
       settings.markPlayed(song.id);
     } catch (e) {
       if (mounted) setState(() => _error = e);
@@ -74,13 +100,16 @@ class _PlayerScreenState extends State<PlayerScreen> with SingleTickerProviderSt
   void _selectPart(int index) {
     final old = _controller;
     if (old == null || index == old.song.partIndex) return;
-    final next = _newController(old.song.withPart(index), speed: old.speed, track: old.track);
+    final next = _newController(old.song.withPart(index), speed: old.speed, track: old.track)
+      ..addListener(_controllerChanged);
     old.dispose();
     setState(() => _controller = next);
+    _controllerChanged();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     _controller?.dispose();
     _time.dispose();
@@ -91,6 +120,8 @@ class _PlayerScreenState extends State<PlayerScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     final c = _controller;
+    // The count-in switch in settings applies to a song that is already open.
+    c?.countIn = SettingsScope.of(context).countIn;
     if (c == null) {
       return Scaffold(
         body: Center(
@@ -148,122 +179,125 @@ class _TopBar extends StatelessWidget {
     final tuning = song.isStandardTuning
         ? null
         : song.tuning.reversed.map((p) => noteName(p, serbian: t.language.isSerbian)).join(' ');
-    return ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) {
-        final chord = controller.currentChord;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 12, 0),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: t.back,
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => Navigator.pop(context),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      t.script(song.info.titleFor(t.language.songLang)),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-                    ),
-                    if (tuning != null || song.capo > 0)
+    return LayoutBuilder(builder: (context, box) {
+      final compact = box.maxWidth < _Controls.compactWidth;
+      return ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) {
+          final chord = controller.currentChord;
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 12, 0),
+            child: Row(
+              children: [
+                IconButton(
+                  tooltip: t.back,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
-                        [
-                          if (tuning != null) '${t.tuning}: $tuning',
-                          if (song.capo > 0) t.capo(song.capo),
-                        ].join('  ·  '),
+                        t.songTitle(song.info),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 13, color: scheme.primary, fontWeight: FontWeight.w600),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                       ),
-                  ],
-                ),
-              ),
-              if (song.parts.length > 1)
-                PopupMenuButton<int>(
-                  tooltip: t.part,
-                  initialValue: song.partIndex,
-                  onSelected: onPart,
-                  itemBuilder: (_) => [
-                    for (final (i, p) in song.parts.indexed) PopupMenuItem(value: i, child: Text(p.name)),
-                  ],
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.queue_music_rounded, size: 20),
-                      const SizedBox(width: 6),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 160),
-                        child: Text(
-                          song.parts[song.partIndex].name,
+                      if (tuning != null || song.capo > 0)
+                        Text(
+                          [
+                            if (tuning != null) '${t.tuning}: $tuning',
+                            if (song.capo > 0) t.capo(song.capo),
+                          ].join('  ·  '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                          style: TextStyle(fontSize: 13, color: scheme.primary, fontWeight: FontWeight.w600),
                         ),
+                    ],
+                  ),
+                ),
+                if (song.parts.length > 1)
+                  PopupMenuButton<int>(
+                    tooltip: t.part,
+                    initialValue: song.partIndex,
+                    onSelected: onPart,
+                    itemBuilder: (_) => [
+                      for (final (i, p) in song.parts.indexed) PopupMenuItem(value: i, child: Text(p.name)),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const Icon(Icons.arrow_drop_down_rounded),
-                    ]),
-                  ),
-                ),
-              if (settings.showChordName && chord != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: scheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(chord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: scheme.onPrimary)),
-                ),
-              _BeatDots(controller: controller),
-              const SizedBox(width: 12),
-              if (song.hasEasy && song.hasFull)
-                SegmentedButton<TrackKind>(
-                  showSelectedIcon: false,
-                  segments: [
-                    ButtonSegment(value: TrackKind.full, label: Text(t.fullMode)),
-                    ButtonSegment(value: TrackKind.easy, label: Text(t.easyMode)),
-                  ],
-                  selected: {controller.track},
-                  onSelectionChanged: (s) => controller.setTrack(s.first),
-                ),
-              if (imported)
-                PopupMenuButton<String>(
-                  tooltip: t.removeSong,
-                  icon: const Icon(Icons.more_vert_rounded),
-                  onSelected: (_) async {
-                    final navigator = Navigator.of(context);
-                    controller.pause();
-                    await removeImportedSongFlow(context, song.id);
-                    if (!songs.isImported(song.id) && navigator.canPop()) navigator.pop();
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'remove',
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.delete_outline_rounded),
-                        const SizedBox(width: 10),
-                        Text(t.removeSong),
+                        const Icon(Icons.queue_music_rounded, size: 20),
+                        const SizedBox(width: 6),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 160),
+                          child: Text(
+                            song.parts[song.partIndex].name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down_rounded),
                       ]),
                     ),
-                  ],
-                ),
-            ],
-          ),
-        );
-      },
-    );
+                  ),
+                if (settings.showChordName && chord != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(chord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: scheme.onPrimary)),
+                  ),
+                _BeatDots(controller: controller),
+                const SizedBox(width: 12),
+                if (song.hasEasy && song.hasFull)
+                  SegmentedButton<TrackKind>(
+                    showSelectedIcon: false,
+                    segments: [
+                      ButtonSegment(value: TrackKind.full, label: Text(compact ? t.fullModeShort : t.fullMode)),
+                      ButtonSegment(value: TrackKind.easy, label: Text(compact ? t.easyModeShort : t.easyMode)),
+                    ],
+                    selected: {controller.track},
+                    onSelectionChanged: (s) => controller.setTrack(s.first),
+                  ),
+                if (imported)
+                  PopupMenuButton<String>(
+                    tooltip: t.removeSong,
+                    icon: const Icon(Icons.more_vert_rounded),
+                    onSelected: (_) async {
+                      final navigator = Navigator.of(context);
+                      controller.pause();
+                      await removeImportedSongFlow(context, song.id);
+                      if (!songs.isImported(song.id) && navigator.canPop()) navigator.pop();
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'remove',
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.delete_outline_rounded),
+                          const SizedBox(width: 10),
+                          Text(t.removeSong),
+                        ]),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 }
 
@@ -446,72 +480,77 @@ class _Controls extends StatelessWidget {
 
   static const _speedStep = 0.05;
 
+  /// Below this width (logical pixels) the controls lose their labels.
+  static const compactWidth = 700.0;
+
   @override
   Widget build(BuildContext context) {
     final t = Strings.of(context);
-    return ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) {
-        final c = controller;
-        final (mainIcon, mainLabel, mainAction) = c.waiting
-            ? (Icons.skip_next_rounded, t.next, c.next)
-            : c.isPlaying
-                ? (Icons.pause_rounded, t.pause, c.pause)
-                : (Icons.play_arrow_rounded, t.play, c.play);
-        final percent = (c.speed * 100).round();
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 170,
-                child: FilledButton.icon(
-                  autofocus: true,
-                  onPressed: mainAction,
-                  icon: Icon(mainIcon, size: 32),
-                  label: Text(mainLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
+    return LayoutBuilder(builder: (context, box) {
+      // A phone held sideways is narrow: the words under the small buttons
+      // go (they stay as tooltips) so the row never runs off the screen.
+      final compact = box.maxWidth < compactWidth;
+      return ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) {
+          final c = controller;
+          final (mainIcon, mainLabel, mainAction) = c.waiting
+              ? (Icons.skip_next_rounded, t.next, c.next)
+              : c.isPlaying
+                  ? (Icons.pause_rounded, t.pause, c.pause)
+                  : (Icons.play_arrow_rounded, t.play, c.play);
+          final percent = (c.speed * 100).round();
+          Widget toggle(IconData icon, String label, bool selected, VoidCallback? onPressed) =>
+              LabeledToggle(icon: icon, label: label, selected: selected, onPressed: onPressed, showLabel: !compact);
+          return Padding(
+            padding: EdgeInsets.fromLTRB(12, 0, 12, compact ? 4 : 6),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: compact ? 136 : 170,
+                  child: FilledButton.icon(
+                    autofocus: true,
+                    onPressed: mainAction,
+                    icon: Icon(mainIcon, size: 32),
+                    label: Text(mainLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              LabeledToggle(icon: Icons.replay_rounded, label: t.restart, selected: false, onPressed: c.restart),
-              LabeledToggle(
-                icon: Icons.front_hand_rounded,
-                label: t.waitMode,
-                selected: c.waitMode,
-                onPressed: () => c.setWaitMode(!c.waitMode),
-              ),
-              const Spacer(),
-              LabeledToggle(
-                icon: Icons.remove_rounded,
-                label: t.slower,
-                selected: false,
-                onPressed: c.speed <= PlaybackController.minSpeed + 1e-9 ? null : () => c.setSpeed(c.speed - _speedStep),
-              ),
-              SizedBox(
-                width: 72,
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.speed_rounded, size: 20),
-                  Text('$percent%', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                ]),
-              ),
-              LabeledToggle(
-                icon: Icons.add_rounded,
-                label: t.faster,
-                selected: false,
-                onPressed: c.speed >= 1 - 1e-9 ? null : () => c.setSpeed(c.speed + _speedStep),
-              ),
-              const SizedBox(width: 12),
-              LabeledToggle(
-                icon: Icons.tune_rounded,
-                label: t.more,
-                selected: c.loop != null || c.metronome || c.soundMode != SoundMode.song,
-                onPressed: () => _showMore(context),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+                const SizedBox(width: 8),
+                toggle(Icons.replay_rounded, t.restart, false, c.restart),
+                toggle(Icons.front_hand_rounded, t.waitMode, c.waitMode, () => c.setWaitMode(!c.waitMode)),
+                const Spacer(),
+                toggle(
+                  Icons.remove_rounded,
+                  t.slower,
+                  false,
+                  c.speed <= PlaybackController.minSpeed + 1e-9 ? null : () => c.setSpeed(c.speed - _speedStep),
+                ),
+                SizedBox(
+                  width: compact ? 60 : 72,
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.speed_rounded, size: 20),
+                    Text('$percent%', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  ]),
+                ),
+                toggle(
+                  Icons.add_rounded,
+                  t.faster,
+                  false,
+                  c.speed >= 1 - 1e-9 ? null : () => c.setSpeed(c.speed + _speedStep),
+                ),
+                SizedBox(width: compact ? 4 : 12),
+                toggle(
+                  Icons.tune_rounded,
+                  t.more,
+                  c.loop != null || c.metronome || c.soundMode != SoundMode.song,
+                  () => _showMore(context),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 
   /// Sound, click and repeat: useful later, not needed for the first song.

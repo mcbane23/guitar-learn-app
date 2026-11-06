@@ -30,7 +30,7 @@ import kotlin.random.Random
  * scheduled a little ahead of time by the Dart sequencer, which keeps the sound
  * in step with the neck animation.
  *
- * The audio thread starts on the first note and stops again after a few
+ * The audio thread starts on the first note and stops again after some
  * seconds of silence, so the app uses no CPU while nothing is playing.
  */
 class GuitarSynth(context: Context) {
@@ -42,6 +42,10 @@ class GuitarSynth(context: Context) {
         val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager?
         val native = am?.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER)?.toIntOrNull() ?: 256
         native.coerceIn(128, 1024)
+    }
+
+    private companion object {
+        const val IDLE_SECONDS = 20L
     }
 
     @Volatile
@@ -162,7 +166,10 @@ class GuitarSynth(context: Context) {
 
                 if (voices.isEmpty() && scheduled.isEmpty()) {
                     idleFrames += framesPerBlock
-                    if (idleFrames > sampleRate * 5L) {
+                    // Keep the track open for a while: starting it again costs
+                    // tens of milliseconds, which would delay the first note
+                    // after every short pause (free play, picking chords).
+                    if (idleFrames > sampleRate * IDLE_SECONDS) {
                         synchronized(lock) {
                             if (commands.isEmpty() || shutDown) {
                                 running = false

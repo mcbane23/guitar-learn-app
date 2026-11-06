@@ -371,13 +371,21 @@ class SongCard extends StatelessWidget {
                 for (var i = 0; i < 3; i++)
                   Icon(i < stars ? Icons.star_rounded : Icons.star_outline_rounded, size: 20, color: Colors.white),
                 const SizedBox(width: 6),
-                Text(t.difficulty(song.difficulty.name), style: const TextStyle(fontSize: 14, color: Colors.white)),
-                const Spacer(),
+                // Narrow cards (a phone's search results) shorten the word rather than overflow.
+                Flexible(
+                  child: Text(
+                    t.difficulty(song.difficulty.name),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 14, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 6),
                 const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 30),
               ]),
               const Spacer(),
               Text(
-                t.script(song.titleFor(t.language.songLang)),
+                t.songTitle(song),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.15),

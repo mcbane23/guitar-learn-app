@@ -103,12 +103,16 @@ class LabeledToggle extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onPressed,
+    this.showLabel = true,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback? onPressed;
+
+  /// Without the label the button is just the icon; the label stays as a tooltip.
+  final bool showLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +131,7 @@ class LabeledToggle extends StatelessWidget {
               foregroundColor: selected ? scheme.onPrimary : null,
             ),
           ),
-          Text(label, style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (showLabel) Text(label, style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );
