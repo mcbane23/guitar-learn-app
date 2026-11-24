@@ -7,12 +7,14 @@ import '../data/song_repository.dart';
 import '../l10n/strings.dart';
 import '../models/song.dart';
 import '../settings/settings.dart';
+import '../update/app_update.dart';
 import 'add_songs.dart';
 import 'chords_screen.dart';
 import 'common.dart';
 import 'free_play_screen.dart';
 import 'player_screen.dart';
 import 'settings_screen.dart';
+import 'update_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _query = TextEditingController();
   Difficulty? _difficulty;
   bool _refreshStarted = false;
+  AppUpdate? _update;
 
   @override
   void didChangeDependencies() {
@@ -32,11 +35,16 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_refreshStarted) {
       _refreshStarted = true;
       // Look for new online songs in the background; tell the user only if some arrived.
-      final songs = AppServices.of(context).songs;
+      final services = AppServices.of(context);
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final (result, count) = await songs.refresh();
+        final (result, count) = await services.songs.refresh();
         if (!mounted || result != RefreshResult.added) return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.of(context).newSongs(count))));
+      });
+      // Also look for a newer build of the app; a card at the top offers it.
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final update = await services.updater.check();
+        if (mounted && update != null) setState(() => _update = update);
       });
     }
   }
@@ -69,6 +77,10 @@ class _HomeScreenState extends State<HomeScreen> {
             return CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _header(context, t)),
+                if (_update case final update?)
+                  SliverToBoxAdapter(
+                    child: UpdateBanner(update: update, onDismiss: () => setState(() => _update = null)),
+                  ),
                 SliverToBoxAdapter(child: _searchBar(context, t)),
                 if (searching)
                   _results(context, t, searchSongs(all, _query.text, difficulty: _difficulty))

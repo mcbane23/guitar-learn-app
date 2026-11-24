@@ -9,12 +9,14 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private var synth: GuitarSynth? = null
     private var folders: SongFolders? = null
+    private var updates: AppUpdate? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val s = GuitarSynth(this)
         synth = s
         folders = SongFolders(this, flutterEngine.dartExecutor.binaryMessenger)
+        updates = AppUpdate(this, flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "guitar_learn/synth")
             .setMethodCallHandler { call, result ->
                 when (call.method) {

@@ -1,6 +1,7 @@
-# Builds the Android app on every pull request and every push to main.
-# A push to main (including a merged pull request) also publishes the debug
-# APK as a GitHub Release, so it can be downloaded straight onto a device.
+# Builds and tests the Android app on every pull request (no artifacts) and
+# every push to main. A push to main (a merged pull request) also publishes
+# the APK as the latest GitHub Release, at a link that never changes:
+# https://github.com/mcbane23/guitar-learn-app/releases/latest/download/guitar-learn.apk
 name: Android build
 
 on:
@@ -52,26 +53,29 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug --build-number=${{ github.run_number }}
 
-      - name: Rename APK
+      # The APK always has the same name, so the link
+      # https://github.com/mcbane23/guitar-learn-app/releases/latest/download/guitar-learn.apk
+      # points at the newest build and the app can download updates from it.
+      # version.json next to it tells the app which build is the newest.
+      - name: Name the APK and write version.json
         id: apk
+        working-directory: .
         run: |
-          name="guitar-learn-debug-${{ github.run_number }}.apk"
-          mv build/app/outputs/flutter-apk/app-debug.apk "build/$name"
-          echo "path=app/build/$name" >> "$GITHUB_OUTPUT"
-          echo "name=$name" >> "$GITHUB_OUTPUT"
+          mkdir -p dist
+          mv app/build/app/outputs/flutter-apk/app-debug.apk dist/guitar-learn.apk
+          cat > dist/version.json <<EOF
+          {
+            "build": ${{ github.run_number }},
+            "tag": "build-${{ github.run_number }}",
+            "commit": "${{ github.sha }}",
+            "apk": "https://github.com/${{ github.repository }}/releases/latest/download/guitar-learn.apk"
+          }
+          EOF
+          cat dist/version.json
 
-      # The APK of a pull request build, for trying it before merging. Kept
-      # short and never fatal: the account's artifact storage is small, and a
-      # full quota must not stop the release below. Builds of main are
-      # published as releases instead.
-      - uses: actions/upload-artifact@v4
-        if: github.event_name == 'pull_request'
-        continue-on-error: true
-        with:
-          name: ${{ steps.apk.outputs.name }}
-          path: ${{ steps.apk.outputs.path }}
-          retention-days: 3
-
+      # Pull request builds only check that the app builds and the tests pass;
+      # they publish nothing. A push to main (a merged pull request) publishes
+      # the APK as the latest release.
       - name: Publish GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         working-directory: .
@@ -80,8 +84,8 @@ jobs:
         run: |
           tag="build-${{ github.run_number }}"
           short_sha="$(git rev-parse --short HEAD)"
-          gh release create "$tag" "${{ steps.apk.outputs.path }}" \
+          gh release create "$tag" dist/guitar-learn.apk dist/version.json \
             --target "${{ github.sha }}" \
-            --title "Debug build ${{ github.run_number }} ($short_sha)" \
-            --notes "Debug APK built from ${{ github.sha }}. Download the .apk below on an Android phone, tablet or TV and open it to install (allow installing from unknown sources when asked)." \
+            --title "Build ${{ github.run_number }} ($short_sha)" \
+            --notes "APK built from ${{ github.sha }}. Download guitar-learn.apk below on an Android phone, tablet or TV and open it to install (allow installing from unknown sources when asked). The app can also update itself from Settings. Fixed link to the newest build: https://github.com/${{ github.repository }}/releases/latest/download/guitar-learn.apk" \
             --latest

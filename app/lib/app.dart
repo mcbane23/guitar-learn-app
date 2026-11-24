@@ -7,6 +7,7 @@ import 'data/song_repository.dart';
 import 'l10n/strings.dart';
 import 'settings/settings.dart';
 import 'ui/add_songs.dart';
+import 'update/app_update.dart';
 import 'ui/home_screen.dart';
 import 'ui/themes.dart';
 
@@ -18,11 +19,15 @@ class AppServices extends InheritedWidget {
     required this.synth,
     required this.pickFiles,
     required this.pickFolder,
+    this.updater = const NoAppUpdater(),
     required super.child,
   });
 
   final SongRepository songs;
   final Synth synth;
+
+  /// Finds and installs newer builds of the app.
+  final AppUpdater updater;
 
   /// Opens the device's file chooser for song files.
   final SongFilePicker pickFiles;
@@ -34,7 +39,11 @@ class AppServices extends InheritedWidget {
 
   @override
   bool updateShouldNotify(AppServices oldWidget) =>
-      songs != oldWidget.songs || synth != oldWidget.synth || pickFiles != oldWidget.pickFiles || pickFolder != oldWidget.pickFolder;
+      songs != oldWidget.songs ||
+      synth != oldWidget.synth ||
+      pickFiles != oldWidget.pickFiles ||
+      pickFolder != oldWidget.pickFolder ||
+      updater != oldWidget.updater;
 }
 
 class GuitarApp extends StatelessWidget {
@@ -45,6 +54,7 @@ class GuitarApp extends StatelessWidget {
     required this.synth,
     this.filePicker = pickSongFilesFromDevice,
     this.folderPicker = pickSongFolderFromDevice,
+    this.updater = const NoAppUpdater(),
   });
 
   final AppSettings settings;
@@ -56,6 +66,9 @@ class GuitarApp extends StatelessWidget {
 
   /// How a folder of song files is chosen (replaced in tests).
   final SongFilePicker folderPicker;
+
+  /// Where app updates come from (none in tests).
+  final AppUpdater updater;
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +84,7 @@ class GuitarApp extends StatelessWidget {
             synth: synth,
             pickFiles: filePicker,
             pickFolder: folderPicker,
+            updater: updater,
             child: StringsScope(
               strings: strings,
               child: MaterialApp(
