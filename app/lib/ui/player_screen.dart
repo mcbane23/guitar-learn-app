@@ -13,6 +13,7 @@ import 'add_songs.dart';
 import 'common.dart';
 import 'fretboard.dart';
 import 'scene_builder.dart';
+import 'themes.dart';
 
 /// The main screen: a full-screen guitar neck that plays a song.
 class PlayerScreen extends StatefulWidget {
@@ -160,14 +161,17 @@ class _PlayerScreenState extends State<PlayerScreen>
         const SingleActivator(LogicalKeyboardKey.channelDown): () => c.setSpeed(c.speed - 0.05),
       },
       child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              _TopBar(controller: c, onPart: _selectPart),
-              Expanded(child: _Neck(controller: c, time: _time, remoteHint: _tv)),
-              _Progress(controller: c),
-              _Controls(controller: c),
-            ],
+        body: AppBackground(
+          theme: SettingsScope.of(context).colorTheme,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _TopBar(controller: c, onPart: _selectPart),
+                Expanded(child: _Neck(controller: c, time: _time, remoteHint: _tv)),
+                _Progress(controller: c),
+                _Controls(controller: c),
+              ],
+            ),
           ),
         ),
       ),
@@ -216,7 +220,7 @@ class _TopBar extends StatelessWidget {
                         t.songTitle(song.info),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                       ),
                       if (tuning != null || song.capo > 0)
                         Text(
@@ -235,10 +239,10 @@ class _TopBar extends StatelessWidget {
                   Tooltip(
                     message: t.part,
                     child: Material(
-                      color: scheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
+                      color: glass,
+                      shape: const StadiumBorder(side: BorderSide(color: glassBorder)),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        customBorder: const StadiumBorder(),
                         onTap: () => _choosePart(context),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
@@ -270,8 +274,12 @@ class _TopBar extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 12),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: chord == null ? scheme.surfaceContainerHigh : scheme.primary,
-                      borderRadius: BorderRadius.circular(12),
+                      color: chord == null ? glass : scheme.primary,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: chord == null ? glassBorder : Colors.transparent),
+                      boxShadow: chord == null
+                          ? null
+                          : [BoxShadow(color: scheme.primary.withValues(alpha: 0.45), blurRadius: 16)],
                     ),
                     child: Text(
                       chord ?? '\u2013',
@@ -381,7 +389,8 @@ class _BeatDots extends StatelessWidget {
             height: i == 0 ? 16 : 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: active && i == beat ? (i == 0 ? Theme.of(context).colorScheme.primary : Colors.white) : Colors.white24,
+              color: active && i == beat ? (i == 0 ? Theme.of(context).colorScheme.primary : Colors.white) : glassHighest,
+              boxShadow: active && i == beat ? [BoxShadow(color: Colors.white.withValues(alpha: 0.5), blurRadius: 8)] : null,
             ),
           ),
       ],
@@ -437,13 +446,9 @@ class _Neck extends StatelessWidget {
             }
           },
         );
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            if (second == null)
-              main
-            else
-              Column(children: [
+        final neck = second == null
+            ? main
+            : Column(children: [
                 Expanded(child: _Named(controller.song.parts[controller.song.partIndex].name, child: main)),
                 Expanded(
                   child: _Named(
@@ -462,7 +467,29 @@ class _Neck extends StatelessWidget {
                     ),
                   ),
                 ),
-              ]),
+              ]);
+        return LayoutBuilder(builder: (context, box) {
+          // On a TV or tablet the neck sits on a pane of glass with the
+          // finger legend underneath; a phone sideways has no room to spare.
+          final roomy = box.maxHeight >= 330 && box.maxWidth >= 700;
+          final style = _style(settings, controller.song);
+          final framed = roomy
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                  child: GlassPanel(
+                    color: glassLow,
+                    padding: const EdgeInsets.fromLTRB(8, 10, 8, 2),
+                    child: Column(children: [
+                      Expanded(child: neck),
+                      if (second == null) NeckLegend(style: style, fretNumbers: settings.dotLabel == DotLabel.fret),
+                    ]),
+                  ),
+                )
+              : neck;
+          return Stack(
+          fit: StackFit.expand,
+          children: [
+            framed,
             if (remoteHint && !controller.isPlaying && controller.countdown == null && !controller.finished && controller.position <= 0)
               Positioned(
                 left: 0,
@@ -473,8 +500,9 @@ class _Neck extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
+                        color: const Color(0xFF0B1022).withValues(alpha: 0.85),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: glassBorder),
                       ),
                       child: Text(t.remoteHint, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                     ),
@@ -501,26 +529,25 @@ class _Neck extends StatelessWidget {
             if (controller.finished)
               FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Card(
-                  color: Colors.black.withValues(alpha: 0.8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.emoji_events_rounded, size: 56, color: Color(0xFFF2C94C)),
-                      Text(t.wellDone, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        autofocus: true,
-                        onPressed: controller.play,
-                        icon: const Icon(Icons.replay_rounded),
-                        label: Text(t.playAgain),
-                      ),
-                    ]),
-                  ),
+                child: GlassPanel(
+                  color: const Color(0xFF0B1022).withValues(alpha: 0.92),
+                  padding: const EdgeInsets.all(28),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.emoji_events_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
+                    Text(t.wellDone, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 18),
+                    PrimaryButton(
+                      autofocus: true,
+                      onPressed: controller.play,
+                      icon: Icons.replay_rounded,
+                      label: t.playAgain,
+                    ),
+                  ]),
                 ),
               ),
           ],
         );
+        });
       },
     );
   }
@@ -544,8 +571,9 @@ class _Named extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFF0B1022).withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: glassBorder),
             ),
             child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
           ),
@@ -583,8 +611,8 @@ class _Progress extends StatelessWidget {
         final bars = (total / bpb).ceil();
         final secondsPerBeat = 60 / (song.tempo * controller.speed);
         final labelStyle = TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontFeatures: const [FontFeature.tabularFigures()],
         );
@@ -685,12 +713,12 @@ class _Controls extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: compact ? 136 : 170,
-                  child: FilledButton.icon(
+                  width: compact ? 136 : 176,
+                  child: PrimaryButton(
                     autofocus: true,
                     onPressed: mainAction,
-                    icon: Icon(mainIcon, size: 32),
-                    label: Text(mainLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    icon: mainIcon,
+                    label: mainLabel,
                   ),
                 ),
                 gap,
@@ -719,8 +747,8 @@ class _Controls extends StatelessWidget {
                   SizedBox(
                     width: compact ? 56 : 64,
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.speed_rounded, size: 18),
-                      Text('$percent%', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                      Text('$percent%', style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                      if (!compact) Text(t.speed, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ]),
                   ),
                   toggle(

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../settings/settings.dart';
+import 'themes.dart';
 
 import '../app.dart';
 import '../l10n/strings.dart';
@@ -119,10 +121,13 @@ class _SendSongsScreenState extends State<SendSongsScreen> {
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(title: Text(t.sendToTv)),
-      body: SafeArea(
+      body: AppBackground(
+        theme: SettingsScope.of(context).colorTheme,
+        child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, kToolbarHeight + 12, 20, 20),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 560),
@@ -134,6 +139,7 @@ class _SendSongsScreenState extends State<SendSongsScreen> {
               },
             ),
           ),
+        ),
         ),
       ),
     );

@@ -8,6 +8,7 @@ import '../l10n/strings.dart';
 import '../music/pitch.dart';
 import '../settings/settings.dart';
 import 'common.dart';
+import 'themes.dart';
 import 'fretboard.dart';
 
 /// Tap any fret to hear that note.
@@ -119,7 +120,9 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
       cursor: _neckFocused ? _cursor : null,
     );
     return Scaffold(
-      body: SafeArea(
+      body: AppBackground(
+        theme: SettingsScope.of(context).colorTheme,
+        child: SafeArea(
         child: Column(
           children: [
             Padding(
@@ -130,10 +133,10 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
                   icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () => Navigator.pop(context),
                 ),
-                Text(t.freePlay, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                Text(t.freePlay, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(t.freePlayHint, style: const TextStyle(fontSize: 15, color: Colors.white70)),
+                  child: Text(t.freePlayHint, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ),
               ]),
             ),
@@ -155,6 +158,7 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
               ),
             ),
           ],
+        ),
         ),
       ),
     );

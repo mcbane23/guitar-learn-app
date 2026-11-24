@@ -52,7 +52,8 @@ void main() {
     await tester.tap(find.text('Play'));
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Pause'), findsOneWidget);
-    expect(find.text('3'), findsOneWidget); // count-in
+    // The count-in (the finger legend under the neck has a "3" too).
+    expect(find.descendant(of: find.byType(FittedBox), matching: find.text('3')), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pump(const Duration(milliseconds: 500));

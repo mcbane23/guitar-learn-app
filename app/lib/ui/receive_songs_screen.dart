@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../settings/settings.dart';
+import 'themes.dart';
 
 import '../app.dart';
 import '../l10n/strings.dart';
@@ -47,8 +49,11 @@ class _ReceiveSongsScreenState extends State<ReceiveSongsScreen> {
     final t = Strings.of(context);
     final r = _receiver!;
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(title: Text(t.receiveSongs)),
-      body: SafeArea(
+      body: AppBackground(
+        theme: SettingsScope.of(context).colorTheme,
+        child: SafeArea(
         child: ListenableBuilder(
           listenable: r,
           builder: (context, _) => LayoutBuilder(
@@ -85,11 +90,12 @@ class _ReceiveSongsScreenState extends State<ReceiveSongsScreen> {
                 );
               }
               return ListView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.fromLTRB(20, kToolbarHeight + 12, 20, 20),
                 children: [Center(child: qr), const SizedBox(height: 20), steps, const SizedBox(height: 16), files, done],
               );
             },
           ),
+        ),
         ),
       ),
     );

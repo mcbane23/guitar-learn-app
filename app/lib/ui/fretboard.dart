@@ -2,7 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import '../models/song.dart';
+import 'common.dart';
 
 /// A finger dot to draw on the neck.
 class NeckDot {
@@ -138,16 +140,23 @@ class NeckStyle {
   @override
   int get hashCode => Object.hash(leftHanded, thinOnTop, highContrast, frets, fretNumbers);
 
+  /// One bright color per finger (index 0 is an open string): amber,
+  /// cyan, green, pink. All light, so the number inside is dark.
   List<Color> get fingerColors => highContrast
       ? const [Color(0xFFFFFFFF), Color(0xFF00B7FF), Color(0xFF00E676), Color(0xFFFFEA00), Color(0xFFFF1744)]
-      : const [Color(0xFFF2C94C), Color(0xFF2F80ED), Color(0xFF27AE60), Color(0xFFF2994A), Color(0xFFEB5757)];
+      : const [Color(0xFFF4F6FB), Color(0xFFFFB13D), Color(0xFF4FD1FF), Color(0xFF4CE0A0), Color(0xFFFF7AB8)];
 
   Color fingerColor(int finger) => fingerColors[finger.clamp(0, 4)];
 
-  Color fingerTextColor(int finger) =>
-      highContrast && (finger == 0 || finger == 2 || finger == 3) ? Colors.black : Colors.white;
+  Color fingerTextColor(int finger) => highContrast
+      ? ((finger == 0 || finger == 2 || finger == 3) ? Colors.black : Colors.white)
+      : const Color(0xFF14101E);
 
-  Color get glow => highContrast ? const Color(0xFFFFFFFF) : const Color(0xFFFFD54F);
+  /// The color of a string that rings and of the strum arrow.
+  Color get glow => highContrast ? const Color(0xFFFFFFFF) : const Color(0xFF4FD1FF);
+
+  Color get fretNumber => Colors.white;
+  Color get fretNumberFaint => Colors.white38;
 }
 
 /// Layout of the neck inside a given size. Shared by the painter and tap
@@ -258,20 +267,27 @@ class FretboardPainter extends CustomPainter {
     final left = math.min(g.mx(g.neckLeft), g.mx(g.neckRight));
     final right = math.max(g.mx(g.neckLeft), g.mx(g.neckRight));
     final board = Rect.fromLTRB(left, g.top, right, g.bottom);
-    canvas.drawRect(
-      board,
+    final corner = Radius.circular(g.spacing * 0.3);
+    // A dark rim under the board lifts it off the screen.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(board.inflate(g.spacing * 0.08), corner),
+      Paint()..color = Colors.black.withValues(alpha: 0.35),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(board, corner),
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: style.highContrast
               ? const [Color(0xFF2B2B2B), Color(0xFF1A1A1A)]
-              : const [Color(0xFF6B3F1F), Color(0xFF4A2A14), Color(0xFF5C3519)],
+              // Dark rosewood: lighter at the top, like light from above.
+              : const [Color(0xFF4E2F1B), Color(0xFF3A2212), Color(0xFF2B170C)],
         ).createShader(board),
     );
 
     // Position markers at frets 3, 5, 7, 9, 15, 17, 19, 21 and double ones at 12 and 24.
-    final inlay = Paint()..color = style.highContrast ? const Color(0xFF555555) : const Color(0xFFE9DFC7);
+    final inlay = Paint()..color = style.highContrast ? const Color(0xFF555555) : Colors.white.withValues(alpha: 0.12);
     final midY = (g.top + g.bottom) / 2;
     final r = math.min(g.spacing * 0.18, (g.fretX[g.frets] - g.fretX[g.frets - 1]) * 0.3);
     for (final f in const [3, 5, 7, 9, 15, 17, 19, 21]) {
@@ -295,8 +311,8 @@ class FretboardPainter extends CustomPainter {
 
     // Frets.
     final fret = Paint()
-      ..color = const Color(0xFFC9CED6)
-      ..strokeWidth = math.max(2.0, g.spacing * 0.08);
+      ..color = const Color(0xFFD7D9DF).withValues(alpha: 0.85)
+      ..strokeWidth = math.max(2.0, g.spacing * 0.07);
     for (var n = 1; n < g.fretX.length; n++) {
       final x = g.mx(g.fretX[n]);
       canvas.drawLine(Offset(x, g.top), Offset(x, g.bottom), fret);
@@ -310,7 +326,7 @@ class FretboardPainter extends CustomPainter {
       final y = g.stringY(s);
       final width = (1.2 + (s - 1) * 0.65) * (g.spacing / 40).clamp(0.7, 2.0);
       final wound = s >= 4;
-      final base = wound ? const Color(0xFFD8B26A) : const Color(0xFFE8E8E8);
+      final base = wound ? const Color(0xFFE2B96A) : const Color(0xFFE8EAF0);
       final age = scene.pluckAge[s];
       if (age != null && age >= 0 && age < 1.2) {
         final strength = math.exp(-age * 2.5);
@@ -369,7 +385,7 @@ class FretboardPainter extends CustomPainter {
       if (label != null) _text(canvas, label, Offset(x, y), r * 0.9, style.fingerColor(0));
     }
     final xPaint = Paint()
-      ..color = const Color(0xFFBDBDBD)
+      ..color = const Color(0xFFFF6B57)
       ..strokeWidth = r * 0.28
       ..strokeCap = StrokeCap.round;
     for (final s in scene.mutedStrings) {
@@ -435,15 +451,19 @@ class FretboardPainter extends CustomPainter {
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.3),
       );
     }
-    canvas.drawCircle(c.translate(0, rr * 0.08), rr, Paint()..color = Colors.black.withValues(alpha: 0.35 * o));
+    // A soft halo in the finger's color, drawn as two rings rather than a
+    // blur, which a TV's chip would feel at 60 frames a second.
+    canvas.drawCircle(c, rr * 1.45, Paint()..color = color.withValues(alpha: 0.16 * o));
+    canvas.drawCircle(c, rr * 1.2, Paint()..color = color.withValues(alpha: 0.22 * o));
+    canvas.drawCircle(c.translate(0, rr * 0.08), rr, Paint()..color = Colors.black.withValues(alpha: 0.3 * o));
     canvas.drawCircle(c, rr, Paint()..color = color.withValues(alpha: o));
     canvas.drawCircle(
       c,
       rr,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = rr * 0.1
-        ..color = Colors.white.withValues(alpha: 0.9 * o),
+        ..strokeWidth = rr * 0.08
+        ..color = Colors.white.withValues(alpha: 0.7 * o),
     );
     final textColor = style.fingerTextColor(d.finger).withValues(alpha: o);
     // The dot keeps its finger color either way; only the number changes.
@@ -460,12 +480,12 @@ class FretboardPainter extends CustomPainter {
 
   void _drawFretNumbers(Canvas canvas, NeckGeometry g) {
     final y = g.bottom + (g.size.height - g.bottom) * 0.5;
-    final size = math.min(g.spacing * 0.42, (g.size.height - g.bottom) * 0.7);
+    final size = math.min(g.spacing * 0.42, (g.size.height - g.bottom) * 0.5);
     for (var n = 1; n <= g.frets; n++) {
       final x = g.mx((g.fretX[n - 1] + g.fretX[n]) / 2);
       final marked = n == 3 || n == 5 || n == 7 || n == 9 || n == 12 || n == 15 || n == 17 || n == 19 || n == 21 || n == 24;
       final width = g.fretX[n] - g.fretX[n - 1];
-      _text(canvas, '$n', Offset(x, y), math.min(size, width * 0.55), marked ? Colors.white70 : Colors.white38);
+      _text(canvas, '$n', Offset(x, y), math.min(size, width * 0.55) * (marked ? 1.1 : 1), marked ? style.fretNumber : style.fretNumberFaint);
     }
   }
 
@@ -508,5 +528,50 @@ class FretboardView extends StatelessWidget {
         child: CustomPaint(size: size, painter: FretboardPainter(scene: scene, style: style)),
       );
     });
+  }
+}
+
+/// What the colors on the neck mean: one badge per finger with its name,
+/// and the marks for an open and a muted string. Shown under the neck
+/// where there is room.
+class NeckLegend extends StatelessWidget {
+  const NeckLegend({super.key, required this.style, this.fretNumbers = false});
+
+  final NeckStyle style;
+
+  /// The dots show fret numbers, so the finger names make no sense; only
+  /// the string marks stay.
+  final bool fretNumbers;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Strings.of(context);
+    final muted = TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant);
+    Widget item(Widget mark, String label) => Row(mainAxisSize: MainAxisSize.min, children: [
+          mark,
+          const SizedBox(width: 6),
+          Text(label, style: muted),
+        ]);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      child: Row(children: [
+        if (!fretNumbers)
+          for (var f = 1; f <= 4; f++) ...[
+            item(FingerBadge(finger: f, color: style.fingerColor(f), textColor: style.fingerTextColor(f), size: 20), t.fingerName(f)),
+            const SizedBox(width: 18),
+          ],
+        const Spacer(),
+        item(
+          Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: style.fingerColor(0), width: 3)),
+          ),
+          t.openStringLegend,
+        ),
+        const SizedBox(width: 18),
+        item(const Icon(Icons.close_rounded, size: 18, color: Color(0xFFFF6B57)), t.mutedStringLegend),
+      ]),
+    );
   }
 }

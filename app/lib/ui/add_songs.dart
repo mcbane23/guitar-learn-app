@@ -10,6 +10,7 @@ import '../import/score.dart' show ImportError;
 import '../l10n/strings.dart';
 import 'receive_songs_screen.dart';
 import 'send_songs_screen.dart';
+import 'themes.dart';
 
 /// One song file the user chose. It is read only when its turn comes, so a
 /// big folder never has to fit in memory at once.
@@ -425,8 +426,8 @@ class _FocusTileState extends State<_FocusTile> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-      side: BorderSide(color: _focused ? Colors.white : Colors.transparent, width: 3),
+      borderRadius: BorderRadius.circular(16),
+      side: _focused ? const BorderSide(color: focusRing, width: 3) : const BorderSide(color: glassBorder),
     );
     final padding = EdgeInsets.symmetric(horizontal: widget.dense ? 8 : 16, vertical: widget.dense ? 0 : 14);
     if (widget.onTap == null) {

@@ -133,7 +133,10 @@ class _UpdateBannerState extends State<UpdateBanner> {
         Expanded(
           child: Material(
             color: scheme.primaryContainer,
-            borderRadius: BorderRadius.circular(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: scheme.primary.withValues(alpha: 0.4)),
+            ),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               focusNode: _updateButton,

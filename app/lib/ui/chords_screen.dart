@@ -10,6 +10,7 @@ import '../music/pitch.dart';
 import '../settings/settings.dart';
 import 'common.dart';
 import 'fretboard.dart';
+import 'themes.dart';
 
 /// Every chord used in the songs, shown on the same neck.
 class ChordsScreen extends StatefulWidget {
@@ -105,8 +106,11 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
             time: age,
           );
 
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: SafeArea(
+      body: AppBackground(
+        theme: settings.colorTheme,
+        child: SafeArea(
         child: Column(
           children: [
             Padding(
@@ -117,7 +121,7 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                   icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () => Navigator.pop(context),
                 ),
-                Text(t.chords, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                Text(t.chords, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
@@ -126,12 +130,20 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                         : settings.dotLabel == DotLabel.fret
                             ? t.fretNumbersLegend
                             : t.fingers,
-                    style: const TextStyle(fontSize: 15, color: Colors.white70),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (shape != null)
-                  Text(shape.name, style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: scheme.primary,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: 0.45), blurRadius: 18)],
+                    ),
+                    child: Text(shape.name, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: scheme.onPrimary)),
+                  ),
               ]),
             ),
             // All chords as cards with a small diagram each. On a TV or a
@@ -155,10 +167,10 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                   itemBuilder: (context, i) {
                     final n = chords.names[i];
                     final selected = n == _selected;
-                    final scheme = Theme.of(context).colorScheme;
                     return FocusCard(
                       autofocus: i == 0,
-                      color: selected ? scheme.primary : null,
+                      radius: 16,
+                      color: selected ? scheme.primary.withValues(alpha: 0.22) : null,
                       onTap: () => _pick(chords[n]!),
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(6, 6, 6, 4),
@@ -170,14 +182,15 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
-                              color: selected ? scheme.onPrimary : null,
+                              color: selected ? scheme.primary : null,
                             ),
                           ),
                           Expanded(
                             child: ChordDiagram(
                               shape: chords[n]!,
                               leftHanded: settings.leftHanded,
-                              color: selected ? scheme.onPrimary : Colors.white,
+                              color: Colors.white,
+                              fingerColors: style.fingerColors,
                             ),
                           ),
                         ]),
@@ -187,8 +200,18 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                 ),
               );
             }),
-            Expanded(child: FretboardView(scene: scene, style: style)),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                child: GlassPanel(
+                  color: glassLow,
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 2),
+                  child: FretboardView(scene: scene, style: style),
+                ),
+              ),
+            ),
           ],
+        ),
         ),
       ),
     );
@@ -200,24 +223,28 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
 /// above a string that is muted or open. Drawn from the thick string on the
 /// left (the other way round for a left-handed player).
 class ChordDiagram extends StatelessWidget {
-  const ChordDiagram({super.key, required this.shape, this.leftHanded = false, this.color = Colors.white});
+  const ChordDiagram({super.key, required this.shape, this.leftHanded = false, this.color = Colors.white, this.fingerColors});
 
   final ChordShape shape;
   final bool leftHanded;
   final Color color;
 
+  /// One color per finger (index 0 unused); without it every dot is [color].
+  final List<Color>? fingerColors;
+
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(painter: _ChordDiagramPainter(shape, leftHanded, color));
+    return CustomPaint(size: Size.infinite, painter: _ChordDiagramPainter(shape, leftHanded, color, fingerColors));
   }
 }
 
 class _ChordDiagramPainter extends CustomPainter {
-  _ChordDiagramPainter(this.shape, this.leftHanded, this.color);
+  _ChordDiagramPainter(this.shape, this.leftHanded, this.color, this.fingerColors);
 
   final ChordShape shape;
   final bool leftHanded;
   final Color color;
+  final List<Color>? fingerColors;
 
   static const _frets = 4;
 
@@ -257,7 +284,10 @@ class _ChordDiagramPainter extends CustomPainter {
     for (var s = 1; s <= 6; s++) {
       final fret = shape.fretOn(s);
       if (fret > 0) {
-        canvas.drawCircle(Offset(x(s), top + (fret - base + 0.5) * fretGap), dotRadius, fill);
+        final finger = shape.fingerOn(s);
+        final colors = fingerColors;
+        final dot = colors == null || finger <= 0 ? fill : (Paint()..color = colors[finger.clamp(0, colors.length - 1)]);
+        canvas.drawCircle(Offset(x(s), top + (fret - base + 0.5) * fretGap), dotRadius, dot);
       } else {
         _text(canvas, fret == 0 ? 'o' : 'x', Offset(x(s), top * 0.45), textStyle);
       }
@@ -273,5 +303,6 @@ class _ChordDiagramPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ChordDiagramPainter old) => old.shape != shape || old.leftHanded != leftHanded || old.color != color;
+  bool shouldRepaint(_ChordDiagramPainter old) =>
+      old.shape != shape || old.leftHanded != leftHanded || old.color != color || old.fingerColors != fingerColors;
 }
