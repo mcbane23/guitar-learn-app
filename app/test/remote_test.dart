@@ -224,8 +224,9 @@ void main() {
   testWidgets('add songs: all four choices fit on the TV screen', (tester) async {
     await start(tester);
     await press(tester, LogicalKeyboardKey.arrowUp, 2);
+    // "Add songs" is the third of the big cards under the title.
     for (var i = 0; i < 8 && focusedText(tester) != 'Add songs'; i++) {
-      await press(tester, LogicalKeyboardKey.arrowLeft);
+      await press(tester, LogicalKeyboardKey.arrowRight);
     }
     expect(focusedText(tester), 'Add songs');
     await press(tester, LogicalKeyboardKey.select);
