@@ -104,6 +104,29 @@ void main() {
     await press(tester, LogicalKeyboardKey.select);
     expect(find.text('Play'), findsOneWidget);
 
+    // Back and Forward move a bar at a time; the song stays paused.
+    await press(tester, LogicalKeyboardKey.arrowRight, 2);
+    expect(focusedText(tester), 'Bar back');
+    await press(tester, LogicalKeyboardKey.arrowRight);
+    expect(focusedText(tester), 'Bar forward');
+    double position() => tester.widget<Slider>(find.byType(Slider)).value;
+    // The song played for a moment before Pause, so it is just past the start.
+    expect(position(), lessThan(1));
+    await press(tester, LogicalKeyboardKey.select, 2);
+    expect(position(), greaterThanOrEqualTo(8));
+    expect(find.text('Play'), findsOneWidget);
+    await press(tester, LogicalKeyboardKey.arrowLeft);
+    expect(focusedText(tester), 'Bar back');
+    await press(tester, LogicalKeyboardKey.select, 2);
+    expect(position(), 0);
+
+    // The remote's rewind/forward keys do the same wherever the focus is.
+    await press(tester, LogicalKeyboardKey.mediaFastForward, 2);
+    expect(position(), greaterThanOrEqualTo(8));
+    await press(tester, LogicalKeyboardKey.mediaRewind, 2);
+    expect(position(), 0);
+    expect(focusedText(tester), 'Bar back');
+
     // Slower: to the right along the row, the speed goes down by 5%.
     await press(tester, LogicalKeyboardKey.arrowRight, 3);
     expect(focusedText(tester), 'Slower');
@@ -115,7 +138,7 @@ void main() {
     await press(tester, LogicalKeyboardKey.arrowLeft);
     expect(focusedText(tester), 'Wait for me');
     await press(tester, LogicalKeyboardKey.select);
-    await press(tester, LogicalKeyboardKey.arrowLeft, 2);
+    await press(tester, LogicalKeyboardKey.arrowLeft, 4);
     expect(focusedText(tester), 'Play');
     await press(tester, LogicalKeyboardKey.select);
     // The song clock runs in real time.

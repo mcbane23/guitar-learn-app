@@ -114,6 +114,9 @@ class LabeledToggle extends StatelessWidget {
   /// Without the label the button is just the icon; the label stays as a tooltip.
   final bool showLabel;
 
+  /// Width of the text under the icon (and so of the whole button).
+  static const labelWidth = 76.0;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -131,7 +134,16 @@ class LabeledToggle extends StatelessWidget {
               foregroundColor: selected ? scheme.onPrimary : null,
             ),
           ),
-          if (showLabel) Text(label, style: const TextStyle(fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (showLabel)
+            // Every labeled button is the same width, so a long word shrinks
+            // to fit instead of pushing the row off the screen.
+            SizedBox(
+              width: labelWidth,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, style: const TextStyle(fontSize: 13), maxLines: 1),
+              ),
+            ),
         ],
       ),
     );

@@ -101,7 +101,9 @@ class _PlayerScreenState extends State<PlayerScreen>
     final old = _controller;
     if (old == null || index == old.song.partIndex) return;
     final next = _newController(old.song.withPart(index), speed: old.speed, track: old.track)
-      ..addListener(_controllerChanged);
+      ..addListener(_controllerChanged)
+      // Another guitar takes over mid-song: same place, no restart.
+      ..continueFrom(old);
     old.dispose();
     setState(() => _controller = next);
     _controllerChanged();
@@ -141,8 +143,14 @@ class _PlayerScreenState extends State<PlayerScreen>
         const SingleActivator(LogicalKeyboardKey.mediaPlay): c.play,
         const SingleActivator(LogicalKeyboardKey.mediaPause): c.pause,
         const SingleActivator(LogicalKeyboardKey.mediaStop): c.pause,
-        const SingleActivator(LogicalKeyboardKey.mediaRewind): c.restart,
-        const SingleActivator(LogicalKeyboardKey.mediaFastForward): () => c.setSpeed(c.speed + 0.05),
+        // Rewind and forward on the remote step a bar at a time; the
+        // previous/next track keys do the same on remotes that have them.
+        const SingleActivator(LogicalKeyboardKey.mediaRewind): () => c.seekBars(-1),
+        const SingleActivator(LogicalKeyboardKey.mediaFastForward): () => c.seekBars(1),
+        const SingleActivator(LogicalKeyboardKey.mediaTrackPrevious): () => c.seekBars(-1),
+        const SingleActivator(LogicalKeyboardKey.mediaTrackNext): () => c.seekBars(1),
+        const SingleActivator(LogicalKeyboardKey.mediaSkipBackward): () => c.seekBars(-1),
+        const SingleActivator(LogicalKeyboardKey.mediaSkipForward): () => c.seekBars(1),
         const SingleActivator(LogicalKeyboardKey.channelUp): () => c.setSpeed(c.speed + 0.05),
         const SingleActivator(LogicalKeyboardKey.channelDown): () => c.setSpeed(c.speed - 0.05),
       },
@@ -331,24 +339,28 @@ class _BeatDots extends StatelessWidget {
   }
 }
 
+/// The neck (or two necks, when a second part is shown underneath) with the
+/// count-in and the "well done" card on top.
 class _Neck extends StatelessWidget {
   const _Neck({required this.controller, required this.time});
 
   final PlaybackController controller;
   final ValueNotifier<double> time;
 
+  NeckStyle _style(AppSettings settings, Song song) => NeckStyle(
+        leftHanded: settings.leftHanded,
+        thinOnTop: settings.thinStringOnTop,
+        highContrast: settings.highContrast,
+        fretNumbers: settings.dotLabel == DotLabel.fret,
+        // The built-in songs fit 12 frets; songs from files may go higher.
+        frets: math.max(12, song.maxFret).clamp(12, 24),
+      );
+
   @override
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     final settings = SettingsScope.of(context);
     final synth = AppServices.of(context).synth;
-    final style = NeckStyle(
-      leftHanded: settings.leftHanded,
-      thinOnTop: settings.thinStringOnTop,
-      highContrast: settings.highContrast,
-      // The built-in songs fit 12 frets; songs from files may go higher.
-      frets: math.max(12, controller.song.maxFret).clamp(12, 24),
-    );
     return ListenableBuilder(
       listenable: Listenable.merge([controller, time]),
       builder: (context, _) {
@@ -358,20 +370,44 @@ class _Neck extends StatelessWidget {
           noteNames: settings.showNoteNames,
           serbianNames: t.language.isSerbian,
         );
+        final second = controller.secondSong;
+        final main = FretboardView(
+          scene: scene,
+          style: _style(settings, controller.song),
+          onTap: (string, fret) {
+            if (controller.waiting) {
+              controller.next();
+            } else {
+              synth.play([SynthNote(midi: controller.song.pitch(string, fret), string: string)]);
+            }
+          },
+        );
         return Stack(
           fit: StackFit.expand,
           children: [
-            FretboardView(
-              scene: scene,
-              style: style,
-              onTap: (string, fret) {
-                if (controller.waiting) {
-                  controller.next();
-                } else {
-                  synth.play([SynthNote(midi: controller.song.pitch(string, fret), string: string)]);
-                }
-              },
-            ),
+            if (second == null)
+              main
+            else
+              Column(children: [
+                Expanded(child: _Named(controller.song.parts[controller.song.partIndex].name, child: main)),
+                Expanded(
+                  child: _Named(
+                    second.parts[second.partIndex].name,
+                    child: FretboardView(
+                      scene: buildScene(
+                        controller,
+                        time: time.value,
+                        noteNames: settings.showNoteNames,
+                        serbianNames: t.language.isSerbian,
+                        second: true,
+                      ),
+                      style: _style(settings, second),
+                      onTap: (string, fret) =>
+                          synth.play([SynthNote(midi: second.pitch(string, fret), string: 0)]),
+                    ),
+                  ),
+                ),
+              ]),
             if (controller.countdown != null)
               IgnorePointer(
                 child: FittedBox(
@@ -414,6 +450,35 @@ class _Neck extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// A neck with the name of its part in the corner, for telling two apart.
+class _Named extends StatelessWidget {
+  const _Named(this.name, {required this.child});
+
+  final String name;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(fit: StackFit.expand, children: [
+      child,
+      Positioned(
+        left: 8,
+        top: 2,
+        child: IgnorePointer(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+          ),
+        ),
+      ),
+    ]);
   }
 }
 
@@ -480,8 +545,11 @@ class _Controls extends StatelessWidget {
 
   static const _speedStep = 0.05;
 
-  /// Below this width (logical pixels) the controls lose their labels.
+  /// Below this width (logical pixels) the player uses the short texts.
   static const compactWidth = 700.0;
+
+  /// Below this width the buttons under the neck lose their labels.
+  static const labelsWidth = 900.0;
 
   @override
   Widget build(BuildContext context) {
@@ -489,7 +557,8 @@ class _Controls extends StatelessWidget {
     return LayoutBuilder(builder: (context, box) {
       // A phone held sideways is narrow: the words under the small buttons
       // go (they stay as tooltips) so the row never runs off the screen.
-      final compact = box.maxWidth < compactWidth;
+      // With nine buttons the words need a little more room than the top bar.
+      final compact = box.maxWidth < labelsWidth;
       return ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
@@ -517,6 +586,12 @@ class _Controls extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 toggle(Icons.replay_rounded, t.restart, false, c.restart),
+                // One bar back or forward: the only way to move through the
+                // song with a remote, since the progress bar is not focusable.
+                // They stay enabled at both ends, so the remote's focus never
+                // jumps away when the song reaches the start or the end.
+                toggle(Icons.fast_rewind_rounded, t.back1Bar, false, () => c.seekBars(-1)),
+                toggle(Icons.fast_forward_rounded, t.forward1Bar, false, () => c.seekBars(1)),
                 toggle(Icons.front_hand_rounded, t.waitMode, c.waitMode, () => c.setWaitMode(!c.waitMode)),
                 const Spacer(),
                 toggle(
@@ -542,7 +617,7 @@ class _Controls extends StatelessWidget {
                 toggle(
                   Icons.tune_rounded,
                   t.more,
-                  c.loop != null || c.metronome || c.soundMode != SoundMode.song,
+                  c.loop != null || c.metronome || c.soundMode != SoundMode.song || c.secondPart != null,
                   () => _showMore(context),
                 ),
               ],
@@ -604,6 +679,17 @@ class _Controls extends StatelessWidget {
                   c.loop != null,
                   c.toggleLoop,
                 ),
+                if (c.song.parts.length > 1) ...[
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Text(t.secondPart, style: TextStyle(fontSize: 15, color: scheme.primary, fontWeight: FontWeight.w600)),
+                  ),
+                  option(Icons.hide_source_rounded, t.none, c.secondPart == null, () => c.setSecondPart(null)),
+                  for (final (i, p) in c.song.parts.indexed)
+                    if (i != c.song.partIndex)
+                      option(Icons.queue_music_rounded, p.name, c.secondPart == i, () => c.setSecondPart(i)),
+                ],
               ],
             ),
           );

@@ -121,6 +121,106 @@ void main() {
     expect(c.position, closeTo(0.2, 1e-9));
   });
 
+  test('count-in takes one second per count at any speed', () {
+    c.countIn = true;
+    c.setSpeed(0.5);
+    c.play();
+    expect(c.countdown, 3);
+    expect(synth.clicks.map((k) => k.delayMs), [0, 1000, 2000]);
+    now = 2.5;
+    c.tick();
+    expect(c.countdown, 1);
+    now = 3.0;
+    c.tick();
+    expect(c.countdown, isNull);
+    expect(c.position, closeTo(0, 1e-9));
+  });
+
+  test('seekBars steps a bar at a time', () {
+    c.seek(2.4);
+    c.seekBars(1); // the next bar line
+    expect(c.position, 4);
+    c.seekBars(-1);
+    expect(c.position, 0);
+    c.seekBars(-1);
+    expect(c.position, 0);
+    c.seek(4.5); // just into bar 2: back goes to the previous bar
+    c.seekBars(-1);
+    expect(c.position, 0);
+    c.seek(7.0); // deep into bar 2: back goes to its start
+    c.seekBars(-1);
+    expect(c.position, 4);
+    c.seekBars(100);
+    expect(c.position, c.totalBeats);
+    c.seekBars(-1);
+    expect(c.position, 4);
+  });
+
+  test('a second part plays along in its own tuning and swaps on handover', () {
+    final song = Song.fromJson({
+      'id': 'two',
+      'title': {'en': 'Two'},
+      'tempo': 60,
+      'timeSignature': [4, 4],
+      'tracks': {
+        'full': [
+          {'beat': 0, 'string': 1, 'fret': 0, 'finger': 0, 'length': 1},
+        ],
+      },
+      'parts': [
+        {'name': 'Lead', 'notes': [{'beat': 0, 'string': 1, 'fret': 0, 'finger': 0, 'length': 1}]},
+        {
+          'name': 'Bass',
+          'tuning': ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+          'notes': [{'beat': 0, 'string': 6, 'fret': 0, 'finger': 0, 'length': 1}],
+        },
+      ],
+    });
+    final c2 = PlaybackController(song: song, chords: _chords, synth: synth, countIn: false, clock: () => now, autoTick: false);
+    c2.setSecondPart(1);
+    expect(c2.secondSong?.parts[1].name, 'Bass');
+    c2.play();
+    c2.tick();
+    // The open high E of the lead and the open low D of the bass sound together.
+    expect(synth.notes.map((n) => n.midi).toSet(), {64, 38});
+    expect(synth.notes.where((n) => n.midi == 38).single.string, 0); // never cuts a lead note
+
+    // The bass becomes the main part: the lead moves to the second neck.
+    final c3 = PlaybackController(song: song.withPart(1), chords: _chords, synth: synth, countIn: false, clock: () => now, autoTick: false)
+      ..continueFrom(c2);
+    expect(c3.secondPart, 0);
+    expect(c3.isPlaying, isTrue);
+    c2.dispose();
+    expect(synth.stops, 0); // the hand-over does not silence the ringing notes
+    c3.setSecondPart(null);
+    expect(c3.secondSong, isNull);
+    c3.dispose();
+  });
+
+  test('another part continues from the same place without a count-in', () {
+    c.countIn = true;
+    c.setSpeed(0.5);
+    c.setMetronome(true);
+    c.play();
+    now = 3.0; // count-in over
+    c.tick();
+    now = 5.0; // one beat in at 50%
+    c.tick();
+    expect(c.position, closeTo(1.0, 1e-9));
+    final other = PlaybackController(
+        song: _song(), chords: _chords, synth: synth, countIn: true, clock: () => now, autoTick: false)
+      ..continueFrom(c);
+    expect(other.position, closeTo(1.0, 1e-9));
+    expect(other.speed, 0.5);
+    expect(other.metronome, isTrue);
+    expect(other.countdown, isNull);
+    expect(other.isPlaying, isTrue);
+    now = 7.0;
+    other.tick();
+    expect(other.position, closeTo(2.0, 1e-9));
+    other.dispose();
+  });
+
   test('chord mode strums every string of the chord softly under the melody', () {
     c.setTrack(TrackKind.easy);
     c.play();

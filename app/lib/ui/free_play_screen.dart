@@ -148,6 +148,7 @@ class _FreePlayScreenState extends State<FreePlayScreen> with SingleTickerProvid
                     leftHanded: settings.leftHanded,
                     thinOnTop: settings.thinStringOnTop,
                     highContrast: settings.highContrast,
+                    fretNumbers: settings.dotLabel == DotLabel.fret,
                   ),
                   onTap: _tap,
                 ),

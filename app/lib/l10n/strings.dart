@@ -97,6 +97,15 @@ class Strings {
   String get thinStringTop => _t('thinStringTop');
   String get thinStringTopHint => _t('thinStringTopHint');
   String get showNoteNames => _t('showNoteNames');
+  String get dotLabel => _t('dotLabel');
+  String get dotLabelFinger => _t('dotLabelFinger');
+  String get dotLabelFingerHint => _t('dotLabelFingerHint');
+  String get dotLabelFret => _t('dotLabelFret');
+  String get dotLabelFretHint => _t('dotLabelFretHint');
+  String get back1Bar => _t('back1Bar');
+  String get secondPart => _t('secondPart');
+  String get none => _t('none');
+  String get forward1Bar => _t('forward1Bar');
   String get showChordName => _t('showChordName');
   String get colors => _t('colors');
   String get colorsBright => _t('colorsBright');
@@ -161,6 +170,39 @@ class Strings {
   String get songFilesHint => _t('songFilesHint');
   String get ok => _t('ok');
   String loopBars(int n) => _t('loopBars', {'n': '$n'});
+  String get receiveSongs => _t('receiveSongs');
+  String get receiveSongsHint => _t('receiveSongsHint');
+  String get sendToTv => _t('sendToTv');
+  String get sendToTvHint => _t('sendToTvHint');
+  String get receiveStep1 => _t('receiveStep1');
+  String get receiveStep2 => _t('receiveStep2');
+  String get receiveStep3 => _t('receiveStep3');
+  String get receiveNoNetwork => _t('receiveNoNetwork');
+  String get receiveFailed => _t('receiveFailed');
+  String get receivedFiles => _t('receivedFiles');
+  String get waitingForPhone => _t('waitingForPhone');
+  String get receiving => _t('receiving');
+  String get done => _t('done');
+  String get searchingDevices => _t('searchingDevices');
+  String get noDevicesFound => _t('noDevicesFound');
+  String get devicesFound => _t('devicesFound');
+  String get searchAgain => _t('searchAgain');
+  String get enterAddress => _t('enterAddress');
+  String get invalidAddress => _t('invalidAddress');
+  String get connect => _t('connect');
+  String get whatToSend => _t('whatToSend');
+  String sendMySongs(int n) => _t('sendMySongs', {'n': '$n'});
+  String get sendMySongsHint => _t('sendMySongsHint');
+  String get sendFiles => _t('sendFiles');
+  String get sendFilesHint => _t('sendFilesHint');
+  String get noMySongs => _t('noMySongs');
+  String sendingProgress(int done, int n) => _t('sendingProgress', {'done': '$done', 'n': '$n'});
+  String get sendDone => _t('sendDone');
+  String resultSent(int n) => _t('resultSent', {'n': '$n'});
+  String resultAlreadyOnTv(int n) => _t('resultAlreadyOnTv', {'n': '$n'});
+  String get deviceUnreachable => _t('deviceUnreachable');
+  String get sendMore => _t('sendMore');
+  String get sendingTo => _t('sendingTo');
 
   /// Why a song file could not be opened.
   String fileError(ImportError? code) => switch (code) {
@@ -235,6 +277,15 @@ class Strings {
     'thinStringTop': 'Thin string on top',
     'thinStringTopHint': 'Like written tabs. Turn off to see the guitar as you look down at it.',
     'showNoteNames': 'Show note names',
+    'dotLabel': 'Number in the circles',
+    'dotLabelFinger': 'Finger number',
+    'dotLabelFingerHint': '1 index, 2 middle, 3 ring, 4 pinky',
+    'dotLabelFret': 'Fret number',
+    'dotLabelFretHint': 'The same number that is written under the neck',
+    'back1Bar': 'Bar back',
+    'secondPart': 'Second instrument underneath',
+    'none': 'None',
+    'forward1Bar': 'Bar forward',
     'showChordName': 'Show chord name',
     'colors': 'Colors',
     'colorsBright': 'Bright',
@@ -298,6 +349,39 @@ class Strings {
     'tuning': 'Tuning',
     'capo': 'Capo {n}',
     'recentlyPlayed': 'Recently played',
+    'receiveSongs': 'Send songs from a phone',
+    'receiveSongsHint': 'Shows a QR code. The phone sends song files from its browser or from the Guitar Learn app.',
+    'sendToTv': 'Send to a TV',
+    'sendToTvHint': 'Send songs from this device to a TV or another device on the same Wi-Fi.',
+    'receiveStep1': 'Connect the phone to the same Wi-Fi network as this device.',
+    'receiveStep2': 'Scan the QR code with the phone camera, or type this address in its browser:',
+    'receiveStep3': 'Or, in the Guitar Learn app on the phone: Add songs, then Send to a TV.',
+    'receiveNoNetwork': 'This device is not connected to a Wi-Fi network.',
+    'receiveFailed': 'Receiving songs could not start on this device.',
+    'receivedFiles': 'Received files',
+    'waitingForPhone': 'Waiting for the phone...',
+    'receiving': 'Receiving...',
+    'done': 'Done',
+    'searchingDevices': 'Looking for a TV on the network...',
+    'noDevicesFound': 'No TV found. On the TV open Add songs, then Send songs from a phone, and search again. You can also type the address from the TV screen.',
+    'devicesFound': 'Send to',
+    'searchAgain': 'Search again',
+    'enterAddress': 'Address from the TV screen',
+    'invalidAddress': 'This is not the address from the TV screen',
+    'connect': 'Connect',
+    'whatToSend': 'What to send',
+    'sendMySongs': 'My songs ({n})',
+    'sendMySongsHint': 'Every song you added from files on this device',
+    'sendFiles': 'Files from this device',
+    'sendFilesHint': 'Choose song files to send',
+    'noMySongs': 'There are no songs in My songs yet.',
+    'sendingProgress': 'Sending: {done} of {n}',
+    'sendDone': 'Sent',
+    'resultSent': 'Added on the other device: {n}',
+    'resultAlreadyOnTv': 'Already on the other device: {n}',
+    'deviceUnreachable': 'The TV did not answer. Is its screen with the QR code still open?',
+    'sendMore': 'Send more',
+    'sendingTo': 'Sending to',
     'fromFile': 'From a file',
     'songFiles': 'Song files',
     'songFilesHint':
@@ -359,6 +443,15 @@ class Strings {
     'thinStringTop': 'Tanka žica gore',
     'thinStringTopHint': 'Kao u tabulaturama. Isključi da vidiš gitaru kao kad gledaš odozgo.',
     'showNoteNames': 'Prikaži imena tonova',
+    'dotLabel': 'Broj u kružićima',
+    'dotLabelFinger': 'Broj prsta',
+    'dotLabelFingerHint': '1 kažiprst, 2 srednji, 3 domali, 4 mali',
+    'dotLabelFret': 'Broj praga',
+    'dotLabelFretHint': 'Isti broj koji piše ispod vrata gitare',
+    'back1Bar': 'Takt nazad',
+    'secondPart': 'Drugi instrument ispod',
+    'none': 'Nijedan',
+    'forward1Bar': 'Takt napred',
     'showChordName': 'Prikaži ime akorda',
     'colors': 'Boje',
     'colorsBright': 'Vesele',
@@ -422,6 +515,39 @@ class Strings {
     'tuning': 'Štim',
     'capo': 'Kapodaster {n}',
     'recentlyPlayed': 'Nedavno svirano',
+    'receiveSongs': 'Pošalji pesme sa telefona',
+    'receiveSongsHint': 'Pokazuje QR kod. Telefon šalje fajlove sa pesmama iz pretraživača ili iz aplikacije Guitar Learn.',
+    'sendToTv': 'Pošalji na TV',
+    'sendToTvHint': 'Pošalji pesme sa ovog uređaja na TV ili drugi uređaj na istoj Wi-Fi mreži.',
+    'receiveStep1': 'Poveži telefon na istu Wi-Fi mrežu kao ovaj uređaj.',
+    'receiveStep2': 'Skeniraj QR kod kamerom telefona ili ukucaj ovu adresu u pretraživač:',
+    'receiveStep3': 'Ili u aplikaciji Guitar Learn na telefonu: Dodaj pesme, pa Pošalji na TV.',
+    'receiveNoNetwork': 'Ovaj uređaj nije povezan na Wi-Fi mrežu.',
+    'receiveFailed': 'Prijem pesama nije mogao da se pokrene na ovom uređaju.',
+    'receivedFiles': 'Primljeni fajlovi',
+    'waitingForPhone': 'Čeka se telefon...',
+    'receiving': 'Prima se...',
+    'done': 'Gotovo',
+    'searchingDevices': 'Traži se TV na mreži...',
+    'noDevicesFound': 'TV nije pronađen. Na TV-u otvori Dodaj pesme, pa Pošalji pesme sa telefona, i potraži ponovo. Možeš i da ukucaš adresu sa TV ekrana.',
+    'devicesFound': 'Pošalji na',
+    'searchAgain': 'Potraži ponovo',
+    'enterAddress': 'Adresa sa TV ekrana',
+    'invalidAddress': 'Ovo nije adresa sa TV ekrana',
+    'connect': 'Poveži',
+    'whatToSend': 'Šta da se pošalje',
+    'sendMySongs': 'Moje pesme ({n})',
+    'sendMySongsHint': 'Sve pesme koje si dodao iz fajlova na ovom uređaju',
+    'sendFiles': 'Fajlovi sa ovog uređaja',
+    'sendFilesHint': 'Izaberi fajlove sa pesmama za slanje',
+    'noMySongs': 'U Mojim pesmama još nema pesama.',
+    'sendingProgress': 'Šalje se: {done} od {n}',
+    'sendDone': 'Poslato',
+    'resultSent': 'Dodato na drugom uređaju: {n}',
+    'resultAlreadyOnTv': 'Već postoji na drugom uređaju: {n}',
+    'deviceUnreachable': 'TV ne odgovara. Da li je ekran sa QR kodom na njemu još otvoren?',
+    'sendMore': 'Pošalji još',
+    'sendingTo': 'Šalje se na',
     'fromFile': 'Iz fajla',
     'songFiles': 'Fajlovi pesama',
     'songFilesHint':

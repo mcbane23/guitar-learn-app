@@ -5,6 +5,8 @@ import '../data/song_repository.dart';
 import '../l10n/strings.dart';
 import '../settings/settings.dart';
 import 'add_songs.dart';
+import 'receive_songs_screen.dart';
+import 'send_songs_screen.dart';
 import 'themes.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -57,6 +59,17 @@ class SettingsScreen extends StatelessWidget {
               trailing: _ThemeSwatch(theme),
               onTap: () => s.update((x) => x.colorTheme = theme),
             ),
+          header(t.dotLabel),
+          for (final (label, hint, value) in [
+            (t.dotLabelFinger, t.dotLabelFingerHint, DotLabel.finger),
+            (t.dotLabelFret, t.dotLabelFretHint, DotLabel.fret),
+          ])
+            ListTile(
+              title: Text(label, style: const TextStyle(fontSize: 18)),
+              subtitle: Text(hint),
+              leading: Icon(s.dotLabel == value ? Icons.radio_button_checked : Icons.radio_button_off),
+              onTap: () => s.update((x) => x.dotLabel = value),
+            ),
           header(t.settings),
           toggle(t.leftHanded, t.leftHandedHint, s.leftHanded, (x, v) => x.leftHanded = v),
           toggle(t.thinStringTop, t.thinStringTopHint, s.thinStringOnTop, (x, v) => x.thinStringOnTop = v),
@@ -96,6 +109,18 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.file_open_rounded),
             title: Text(t.addSongs, style: const TextStyle(fontSize: 18)),
             onTap: () => addSongsFlow(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.qr_code_2_rounded),
+            title: Text(t.receiveSongs, style: const TextStyle(fontSize: 18)),
+            subtitle: Text(t.receiveSongsHint),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ReceiveSongsScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.cast_rounded),
+            title: Text(t.sendToTv, style: const TextStyle(fontSize: 18)),
+            subtitle: Text(t.sendToTvHint),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SendSongsScreen())),
           ),
           header(t.onlineSongs),
           ListenableBuilder(

@@ -11,7 +11,7 @@ import 'cue.dart';
 enum TrackKind { easy, full }
 
 /// How a cue is voiced when it is played.
-enum _Voice { lead, melody, backing, accompany }
+enum _Voice { lead, melody, backing, accompany, second }
 
 /// What the app plays out loud.
 enum SoundMode {
@@ -56,6 +56,10 @@ class PlaybackController extends ChangeNotifier {
 
   static const countInBeats = 3;
 
+  /// The count-in takes one second per count, whatever the song's tempo or
+  /// the speed setting, so "3-2-1" always feels the same.
+  static const countInSecondsPerBeat = 1.0;
+
   final Song song;
   final ChordLibrary chords;
   final Synth synth;
@@ -65,6 +69,11 @@ class PlaybackController extends ChangeNotifier {
 
   late final List<Cue> _easyCues;
   late final List<Cue> _fullCues;
+
+  /// Another part of the same song shown on a second neck and played along
+  /// (for example the bass under the lead guitar). Null when there is none.
+  Song? _secondSong;
+  List<Cue> _secondCues = const [];
   late TrackKind _track;
   late double _speed;
 
@@ -76,6 +85,10 @@ class PlaybackController extends ChangeNotifier {
   double _anchorTime = 0;
   double _scheduledUntil = 0;
   bool _finished = false;
+
+  /// Set when another controller took over mid-song: this one must not
+  /// silence the synthesizer when it goes, or the ringing notes would cut off.
+  bool _handedOver = false;
 
   SoundMode _soundMode = SoundMode.song;
   bool _metronome = false;
@@ -106,6 +119,28 @@ class PlaybackController extends ChangeNotifier {
   bool get waiting => _waiting;
   ({double start, double end})? get loop => _loop;
 
+  /// The part shown on the second neck, or null.
+  Song? get secondSong => _secondSong;
+  int? get secondPart => _secondSong?.partIndex;
+  List<Cue> get secondCues => _secondCues;
+
+  /// Shows [index] (one of [Song.parts]) on a second neck under the main
+  /// one, and plays it along. Null hides the second neck.
+  void setSecondPart(int? index) {
+    if (index == null || index < 0 || index >= song.parts.length || index == song.partIndex) {
+      if (_secondSong == null) return;
+      _secondSong = null;
+      _secondCues = const [];
+    } else {
+      if (_secondSong?.partIndex == index) return;
+      _secondSong = song.withPart(index);
+      _secondCues = cuesFromNotes(_secondSong!.full);
+    }
+    // What was handed to the synthesizer stays; the new mix starts from here.
+    _scheduledUntil = math.max(_scheduledUntil, _position);
+    notifyListeners();
+  }
+
   double get beatsPerSecond => song.tempo / 60 * _speed;
   int get beatInBar => (_position.floor()) % song.beatsPerBar;
 
@@ -118,16 +153,17 @@ class PlaybackController extends ChangeNotifier {
 
   // ---- Controls ----------------------------------------------------------
 
-  void play() {
+  /// Starts playing. [withCountIn] overrides the count-in setting, for
+  /// example to go straight on when another part takes over mid-song.
+  void play({bool? withCountIn}) {
     if (isPlaying) return;
     if (_finished || _position >= totalBeats) seek(0);
     _finished = false;
-    if (countIn && !_waitMode) {
+    if ((withCountIn ?? countIn) && !_waitMode) {
       _countdownStart = _clock();
       _countdown = countInBeats;
-      final spb = 1000 / beatsPerSecond;
       for (var i = 0; i < countInBeats; i++) {
-        synth.click(accent: i == 0, delayMs: i * spb);
+        synth.click(accent: i == 0, delayMs: i * countInSecondsPerBeat * 1000);
       }
     } else {
       _startClock();
@@ -167,6 +203,19 @@ class PlaybackController extends ChangeNotifier {
     _scheduledUntil = _position;
     if (_playing) synth.stopAll();
     notifyListeners();
+  }
+
+  /// Moves [bars] bars back (negative) or forward from the nearest bar line,
+  /// so a remote's rewind and forward keys step through the song bar by bar.
+  /// Playing goes on from the new place; a finished song can be rewound.
+  void seekBars(int bars) {
+    final bpb = song.beatsPerBar.toDouble();
+    final bar = _position / bpb;
+    // Forward goes to the next bar line. Back goes to the start of this bar,
+    // or to the previous bar when this one has only just begun (within a
+    // beat), so pressing again and again walks back a bar at a time.
+    final from = bars > 0 ? bar.floor() : (bar - 1 / bpb).ceil();
+    seek((from + bars) * bpb);
   }
 
   void setSpeed(double value) {
@@ -242,6 +291,32 @@ class PlaybackController extends ChangeNotifier {
   /// How many bars the loop covers (0 without a loop).
   int get loopBars => _loop == null ? 0 : ((_loop!.end - _loop!.start) / song.beatsPerBar).ceil();
 
+  /// Takes over where [other] is: same place, speed, modes, and still
+  /// playing if it was, with no count-in. Used when another part (guitar)
+  /// of the same song is chosen while it plays.
+  void continueFrom(PlaybackController other) {
+    _speed = other.speed;
+    _soundMode = other.soundMode == SoundMode.accompany && !song.hasEasy ? SoundMode.song : other.soundMode;
+    _metronome = other.metronome;
+    _waitMode = other.waitMode;
+    _loop = other.loop == null ? null : (start: other.loop!.start, end: math.min(other.loop!.end, totalBeats));
+    // The second neck stays; if it showed the part that is now the main
+    // one, the two swap places.
+    setSecondPart(other.secondPart == song.partIndex ? other.song.partIndex : other.secondPart);
+    _position = other.position.clamp(0.0, totalBeats);
+    _finished = false;
+    _waitIndex = firstCueAtOrAfter(cues, _position);
+    _reanchor();
+    // Notes already handed to the synthesizer keep sounding; this part
+    // picks up from the moment the old one had scheduled up to.
+    _scheduledUntil = math.max(_position, math.min(other._scheduledUntil, totalBeats));
+    other._handedOver = true;
+    other._timer?.cancel();
+    other._timer = null;
+    if (other.isPlaying || other.waiting) play(withCountIn: false);
+    notifyListeners();
+  }
+
   /// In wait mode: the player played the note, move on to the next one.
   void next() {
     if (!_waiting) {
@@ -282,13 +357,13 @@ class PlaybackController extends ChangeNotifier {
   void tick() {
     final now = _clock();
     if (_countdown != null) {
-      final beats = (now - _countdownStart) * beatsPerSecond;
-      if (beats >= countInBeats) {
+      final counts = (now - _countdownStart) / countInSecondsPerBeat;
+      if (counts >= countInBeats) {
         _countdown = null;
         _startClock();
-        _anchorTime = _countdownStart + countInBeats / beatsPerSecond;
+        _anchorTime = _countdownStart + countInBeats * countInSecondsPerBeat;
       } else {
-        final c = countInBeats - beats.floor();
+        final c = countInBeats - counts.floor();
         if (c != _countdown) {
           _countdown = c;
           notifyListeners();
@@ -360,16 +435,25 @@ class PlaybackController extends ChangeNotifier {
 
   List<(List<Cue>, _Voice)> _soundTracks() => switch (_soundMode) {
         SoundMode.mute => const [],
-        SoundMode.song => _track == TrackKind.full || !song.hasFull
-            ? [(cues, _Voice.lead)]
-            // Chords alone do not tell which song it is: play the melody on
-            // top and the strums softly underneath, like a singer with a guitar.
-            : [(_easyCues, _Voice.backing), (_fullCues, _Voice.melody)],
+        SoundMode.song => [
+            if (_track == TrackKind.full || !song.hasFull)
+              (cues, _Voice.lead)
+            else ...[
+              // Chords alone do not tell which song it is: play the melody on
+              // top and the strums softly underneath, like a singer with a guitar.
+              (_easyCues, _Voice.backing),
+              (_fullCues, _Voice.melody),
+            ],
+            if (_secondSong != null) (_secondCues, _Voice.second),
+          ],
         SoundMode.accompany => [(_easyCues, _Voice.accompany)],
       };
 
   void _sound(Cue cue, double delayMs, _Voice voice) {
     if (_soundMode == SoundMode.mute) return;
+    // The second part has its own tuning (a bass, a capo), so its pitches
+    // come from that part.
+    final part = voice == _Voice.second ? _secondSong! : song;
     final msPerBeat = 1000 / beatsPerSecond;
     final duration = cue.length * msPerBeat;
     final notes = <SynthNote>[];
@@ -384,17 +468,18 @@ class PlaybackController extends ChangeNotifier {
       _Voice.backing => cue.strum == Strum.up ? 0.3 : 0.45,
       _Voice.melody => 0.95,
       _Voice.lead => cue.strum == Strum.up ? 0.6 : 0.85,
+      _Voice.second => 0.7,
     };
     for (var k = 0; k < strings.length; k++) {
       final s = strings[k];
       notes.add(SynthNote(
-        midi: song.pitch(s, cue.fretOn(s)),
+        midi: part.pitch(s, cue.fretOn(s)),
         velocity: baseVelocity,
         delayMs: math.max(0, delayMs) + k * spacing,
         durationMs: duration,
-        // Backing strums are not tied to a string, so they never cut off a
-        // melody note that happens to be on the same string.
-        string: voice == _Voice.backing ? 0 : s,
+        // Backing strums and the second part are not tied to a string, so
+        // they never cut off a lead note that happens to be on the same string.
+        string: voice == _Voice.backing || voice == _Voice.second ? 0 : s,
       ));
     }
     synth.play(notes);
@@ -403,7 +488,7 @@ class PlaybackController extends ChangeNotifier {
   @override
   void dispose() {
     _timer?.cancel();
-    synth.stopAll();
+    if (!_handedOver) synth.stopAll();
     super.dispose();
   }
 }

@@ -9,20 +9,26 @@ import 'fretboard.dart';
 /// Works out what the neck shows at the controller's current position:
 /// solid dots for what to hold now, fading-in dots for what comes next,
 /// glowing strings for what was just played.
+///
+/// By default it draws the controller's own part. With [second] it draws the
+/// part on the second neck ([PlaybackController.secondSong]) at the same
+/// moment of the song.
 NeckScene buildScene(
   PlaybackController c, {
   required double time,
   bool noteNames = false,
   bool serbianNames = false,
+  bool second = false,
 }) {
-  final cues = c.cues;
+  final cues = second ? c.secondCues : c.cues;
+  final song = second ? c.secondSong ?? c.song : c.song;
   final pos = c.position;
   final bps = c.beatsPerSecond;
   // Show upcoming notes about 1.2 seconds ahead (at least half a beat).
   final preview = math.max(0.5, 1.2 * bps);
 
   String? label(int string, int fret) =>
-      noteNames ? noteName(c.song.pitch(string, fret), serbian: serbianNames) : null;
+      noteNames ? noteName(song.pitch(string, fret), serbian: serbianNames) : null;
 
   final idx = firstCueAtOrAfter(cues, pos + 1e-9);
   // The cue being played now is the last one that has started.
@@ -111,7 +117,7 @@ NeckScene buildScene(
     openLabels: openLabels,
     strum: strum,
     strumProgress: strumProgress,
-    pulse: c.waiting,
+    pulse: c.waiting && !second,
     time: time,
   );
 }
