@@ -257,6 +257,15 @@ class SongRepository extends ChangeNotifier {
     return h.toRadixString(16);
   }
 
+  /// The song file of a song in "My songs", as it is kept on the device,
+  /// for sending it to another device. Null for other songs.
+  Future<Uint8List?> importedSongBytes(String id) async {
+    final dir = _importDir;
+    if (dir == null || !_imported.containsKey(id)) return null;
+    final f = File('${dir.path}/${_importedFile(id)}');
+    return await f.exists() ? f.readAsBytes() : null;
+  }
+
   Future<Song> loadSong(String id) async {
     final cached = _songCache[id];
     if (cached != null) return cached;

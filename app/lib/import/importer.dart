@@ -147,7 +147,8 @@ Map<String, dynamic> _fromAppJson(Uint8List bytes, String id, String fileName) {
     throw ImportException('Not a song file');
   }
   if (j['tracks'] is! Map) throw ImportException('Not a song file');
-  j = {...j, 'id': id, 'fileName': fileName, 'format': 'Song file', 'tags': const ['my-songs']};
+  // A song sent from another device keeps the name and format of the file it came from.
+  j = {...j, 'id': id, 'fileName': j['fileName'] ?? fileName, 'format': j['format'] ?? 'Song file', 'tags': const ['my-songs']};
   j.putIfAbsent('source', () => 'Imported from $fileName');
   final song = Song.fromJson(j);
   if (!song.hasFull && !song.hasEasy) throw ImportException.noNotes('This song file has no notes');

@@ -8,6 +8,8 @@ import '../app.dart';
 import '../data/song_repository.dart';
 import '../import/score.dart' show ImportError;
 import '../l10n/strings.dart';
+import 'receive_songs_screen.dart';
+import 'send_songs_screen.dart';
 
 /// One song file the user chose. It is read only when its turn comes, so a
 /// big folder never has to fit in memory at once.
@@ -110,7 +112,7 @@ Future<PickedSongs?> pickSongFolderFromDevice() async {
 }
 
 /// How the user wants to add songs.
-enum _AddKind { files, folder }
+enum _AddKind { files, folder, fromPhone, toTv }
 
 /// Asks whether to add some files or a whole folder, then adds them to
 /// "My songs" and shows what happened to every file.
@@ -121,6 +123,14 @@ Future<void> addSongsFlow(BuildContext context) async {
 
   final kind = await showDialog<_AddKind>(context: context, builder: (_) => const _AddKindDialog());
   if (kind == null || !context.mounted) return;
+  if (kind == _AddKind.fromPhone) {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ReceiveSongsScreen()));
+    return;
+  }
+  if (kind == _AddKind.toTv) {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SendSongsScreen()));
+    return;
+  }
 
   PickedSongs? picked;
   try {
@@ -234,21 +244,7 @@ class _AddKindDialog extends StatelessWidget {
     final t = Strings.of(context);
     Widget option(_AddKind kind, IconData icon, String title, String hint, {bool autofocus = false}) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: _FocusTile(
-            autofocus: autofocus,
-            onTap: () => Navigator.of(context).pop(kind),
-            child: Row(children: [
-              Icon(icon, size: 40),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(hint, style: Theme.of(context).textTheme.bodyMedium),
-                ]),
-              ),
-            ]),
-          ),
+          child: OptionTile(autofocus: autofocus, icon: icon, title: title, hint: hint, onTap: () => Navigator.of(context).pop(kind)),
         );
     return AlertDialog(
       title: Text(t.addSongs),
@@ -258,10 +254,43 @@ class _AddKindDialog extends StatelessWidget {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             option(_AddKind.files, Icons.file_open_rounded, t.chooseFiles, t.chooseFilesHint, autofocus: true),
             option(_AddKind.folder, Icons.folder_open_rounded, t.chooseFolder, t.chooseFolderHint),
+            option(_AddKind.fromPhone, Icons.qr_code_2_rounded, t.receiveSongs, t.receiveSongsHint),
+            option(_AddKind.toTv, Icons.cast_rounded, t.sendToTv, t.sendToTvHint),
           ]),
         ),
       ),
       actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel))],
+    );
+  }
+}
+
+/// A big choice with an icon, a title and a hint, easy to hit with a finger
+/// or a TV remote.
+class OptionTile extends StatelessWidget {
+  const OptionTile({super.key, required this.icon, required this.title, required this.hint, required this.onTap, this.autofocus = false});
+  final IconData icon;
+  final String title;
+  final String hint;
+  final VoidCallback? onTap;
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = onTap == null ? Theme.of(context).disabledColor : null;
+    return _FocusTile(
+      autofocus: autofocus,
+      onTap: onTap,
+      child: Row(children: [
+        Icon(icon, size: 40, color: color),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color)),
+            const SizedBox(height: 2),
+            Text(hint, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color)),
+          ]),
+        ),
+      ]),
     );
   }
 }
