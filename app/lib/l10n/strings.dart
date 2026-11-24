@@ -133,6 +133,18 @@ class Strings {
   String get songSourceNotFound => _t('songSourceNotFound');
   String get privacy => _t('privacy');
   String get about => _t('about');
+  String get appUpdate => _t('appUpdate');
+  String get checkForUpdate => _t('checkForUpdate');
+  String get checkingForUpdate => _t('checkingForUpdate');
+  String get appUpToDate => _t('appUpToDate');
+  String get updateCheckFailed => _t('updateCheckFailed');
+  String updateAvailable(int build) => _t('updateAvailable', {'n': '$build'});
+  String get updateHint => _t('updateHint');
+  String get updateNow => _t('updateNow');
+  String get later => _t('later');
+  String get downloadingUpdate => _t('downloadingUpdate');
+  String get updateFailed => _t('updateFailed');
+  String currentBuild(int build) => _t('currentBuild', {'n': '$build'});
   String get tapChord => _t('tapChord');
   String get fingers => _t('fingers');
   String get songNotFound => _t('songNotFound');
@@ -316,6 +328,18 @@ class Strings {
     'songSourceNotFound': 'No song list found at this link',
     'privacy': 'This app collects no personal data. No accounts, no ads.',
     'about': 'About',
+    'appUpdate': 'App update',
+    'checkForUpdate': 'Check for a new version',
+    'checkingForUpdate': 'Checking...',
+    'appUpToDate': 'You have the newest version',
+    'updateCheckFailed': 'Could not check. Is the Internet on?',
+    'updateAvailable': 'New version available (build {n})',
+    'updateHint': 'The new version downloads and Android asks you to install it. Your songs and settings stay.',
+    'updateNow': 'Update',
+    'later': 'Later',
+    'downloadingUpdate': 'Downloading the new version...',
+    'updateFailed': 'The update could not be installed. Try again later.',
+    'currentBuild': 'Installed version: build {n}',
     'tapChord': 'Pick a chord to see and hear it',
     'fingers': 'Fingers: 1 index, 2 middle, 3 ring, 4 little',
     'songNotFound': 'This song could not be opened',
@@ -482,6 +506,18 @@ class Strings {
     'songSourceNotFound': 'Na ovom linku nema spiska pesama',
     'privacy': 'Aplikacija ne prikuplja lične podatke. Bez naloga, bez reklama.',
     'about': 'O aplikaciji',
+    'appUpdate': 'Ažuriranje aplikacije',
+    'checkForUpdate': 'Proveri da li ima nova verzija',
+    'checkingForUpdate': 'Proveravam...',
+    'appUpToDate': 'Imaš najnoviju verziju',
+    'updateCheckFailed': 'Provera nije uspela. Da li ima interneta?',
+    'updateAvailable': 'Dostupna je nova verzija (build {n})',
+    'updateHint': 'Nova verzija se preuzima, a Android te pita da je instaliraš. Pesme i podešavanja ostaju.',
+    'updateNow': 'Ažuriraj',
+    'later': 'Kasnije',
+    'downloadingUpdate': 'Preuzimam novu verziju...',
+    'updateFailed': 'Ažuriranje nije uspelo. Probaj kasnije.',
+    'currentBuild': 'Instalirana verzija: build {n}',
     'tapChord': 'Izaberi akord da ga vidiš i čuješ',
     'fingers': 'Prsti: 1 kažiprst, 2 srednji, 3 domali, 4 mali',
     'songNotFound': 'Ova pesma ne može da se otvori',

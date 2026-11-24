@@ -4,10 +4,12 @@ import '../app.dart';
 import '../data/song_repository.dart';
 import '../l10n/strings.dart';
 import '../settings/settings.dart';
+import '../update/app_update.dart';
 import 'add_songs.dart';
 import 'receive_songs_screen.dart';
 import 'send_songs_screen.dart';
 import 'themes.dart';
+import 'update_dialog.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -178,10 +180,63 @@ class SettingsScreen extends StatelessWidget {
               await services.songs.refresh();
             },
           ),
+          header(t.appUpdate),
+          _UpdateTile(updater: services.updater),
           header(t.about),
           ListTile(leading: const Icon(Icons.privacy_tip_outlined), title: Text(t.privacy)),
         ],
       ),
+    );
+  }
+}
+
+/// "Check for a new version": looks up the newest build on GitHub and offers
+/// to install it. Shows the installed build number underneath.
+class _UpdateTile extends StatefulWidget {
+  const _UpdateTile({required this.updater});
+
+  final AppUpdater updater;
+
+  @override
+  State<_UpdateTile> createState() => _UpdateTileState();
+}
+
+class _UpdateTileState extends State<_UpdateTile> {
+  bool _checking = false;
+  int? _build;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.updater.currentBuild().then((b) {
+      if (mounted) setState(() => _build = b);
+    });
+  }
+
+  Future<void> _check() async {
+    final t = Strings.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _checking = true);
+    final update = await widget.updater.check();
+    if (!mounted) return;
+    setState(() => _checking = false);
+    if (update != null) {
+      await showUpdateDialog(context, update);
+    } else {
+      messenger.showSnackBar(SnackBar(content: Text(_build == null || _build! <= 0 ? t.updateCheckFailed : t.appUpToDate)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Strings.of(context);
+    return ListTile(
+      leading: _checking
+          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3))
+          : const Icon(Icons.system_update_rounded),
+      title: Text(_checking ? t.checkingForUpdate : t.checkForUpdate, style: const TextStyle(fontSize: 18)),
+      subtitle: _build != null && _build! > 0 ? Text(t.currentBuild(_build!)) : null,
+      onTap: _checking ? null : _check,
     );
   }
 }
