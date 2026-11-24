@@ -246,17 +246,31 @@ class _AddKindDialog extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 12),
           child: OptionTile(autofocus: autofocus, icon: icon, title: title, hint: hint, onTap: () => Navigator.of(context).pop(kind)),
         );
+    final options = [
+      option(_AddKind.files, Icons.file_open_rounded, t.chooseFiles, t.chooseFilesHint, autofocus: true),
+      option(_AddKind.folder, Icons.folder_open_rounded, t.chooseFolder, t.chooseFolderHint),
+      option(_AddKind.fromPhone, Icons.qr_code_2_rounded, t.receiveSongs, t.receiveSongsHint),
+      option(_AddKind.toTv, Icons.cast_rounded, t.sendToTv, t.sendToTvHint),
+    ];
+    // A TV (or a tablet sideways) is wide but not tall: the four choices go
+    // in two columns, so the last one is not cut off at the bottom.
+    final size = MediaQuery.sizeOf(context);
+    final twoColumns = size.width >= 900 && size.height < 700;
     return AlertDialog(
       title: Text(t.addSongs),
       content: SizedBox(
-        width: 480,
+        width: twoColumns ? 860 : 480,
         child: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            option(_AddKind.files, Icons.file_open_rounded, t.chooseFiles, t.chooseFilesHint, autofocus: true),
-            option(_AddKind.folder, Icons.folder_open_rounded, t.chooseFolder, t.chooseFolderHint),
-            option(_AddKind.fromPhone, Icons.qr_code_2_rounded, t.receiveSongs, t.receiveSongsHint),
-            option(_AddKind.toTv, Icons.cast_rounded, t.sendToTv, t.sendToTvHint),
-          ]),
+          child: twoColumns
+              ? Column(mainAxisSize: MainAxisSize.min, children: [
+                  for (var i = 0; i < options.length; i += 2)
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(child: options[i]),
+                      const SizedBox(width: 12),
+                      Expanded(child: options[i + 1]),
+                    ]),
+                ])
+              : Column(mainAxisSize: MainAxisSize.min, children: options),
         ),
       ),
       actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel))],

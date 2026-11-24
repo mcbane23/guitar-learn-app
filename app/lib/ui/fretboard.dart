@@ -159,8 +159,11 @@ class NeckGeometry {
     final right = size.width - math.max(8.0, size.width * 0.01);
     neckLeft = nutWidth;
     neckRight = right;
-    top = size.height * 0.06;
-    bottom = size.height * 0.88;
+    // Room above the first and below the last string for a whole finger
+    // dot (its radius is up to 0.46 of the string spacing): a melody on
+    // the thin E string must not look as if it sat on the edge of the neck.
+    top = size.height * 0.09;
+    bottom = size.height * 0.86;
     final neckLen = neckRight - neckLeft;
     // Real guitar fret spacing: each fret is 2^(1/12) narrower than the last.
     final scale = neckLen / (1 - math.pow(2, -frets / 12));

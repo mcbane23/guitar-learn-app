@@ -221,6 +221,23 @@ void main() {
     expect(focusedSlider()!.value, 0.75);
   });
 
+  testWidgets('add songs: all four choices fit on the TV screen', (tester) async {
+    await start(tester);
+    await press(tester, LogicalKeyboardKey.arrowUp, 2);
+    for (var i = 0; i < 8 && focusedText(tester) != 'Add songs'; i++) {
+      await press(tester, LogicalKeyboardKey.arrowLeft);
+    }
+    expect(focusedText(tester), 'Add songs');
+    await press(tester, LogicalKeyboardKey.select);
+    await tester.pump(const Duration(milliseconds: 500));
+    final t = Strings(AppLanguage.en);
+    // The last choice, hint and all, is on the screen without scrolling.
+    final hint = find.text(t.sendToTvHint);
+    expect(hint, findsOneWidget);
+    expect(tester.getBottomLeft(hint).dy, lessThan(540));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('free play: arrows walk the neck and OK plays the note', (tester) async {
     final (_, synth) = await start(tester);
     await press(tester, LogicalKeyboardKey.arrowUp, 2);
