@@ -71,7 +71,7 @@ android {
         val variantName = baseName
         outputs.all {
             val output = this as com.android.build.gradle.api.ApkVariantOutput
-            val abi: String? = output.getFilter("ABI")
+            val abi: String? = output.getFilter(com.android.build.VariantOutput.FilterType.ABI)
             // The universal APK keeps the name the Flutter tool expects
             // (app-release.apk); the others are app-arm64-v8a-release.apk etc.
             output.outputFileName = if (abi == null) "app-$variantName.apk" else "app-$abi-$variantName.apk"
