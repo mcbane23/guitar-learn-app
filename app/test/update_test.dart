@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:guitar_learn/app.dart';
 import 'package:guitar_learn/audio/synth.dart';
@@ -60,6 +61,16 @@ void main() {
 
     expect(updater.checks, 1);
     expect(find.text('New version available (build 31)'), findsOneWidget);
+    // The remote's focus moves to the card as soon as it appears, and the
+    // arrows can leave it (down: the search row) and come back.
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'update now');
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, isNot('update now'));
+    expect(FocusManager.instance.primaryFocus?.context, isNotNull);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'update now');
 
     await tester.tap(find.widgetWithText(FilledButton, 'Update'));
     await tester.pumpAndSettle();

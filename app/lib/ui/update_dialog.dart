@@ -86,16 +86,44 @@ class _UpdateDialogState extends State<_UpdateDialog> {
 }
 
 /// A card at the top of the home screen when a newer build was found.
-class UpdateBanner extends StatelessWidget {
+///
+/// With a TV remote the Update button takes the focus as soon as the card
+/// appears (the check finishes a moment after the app starts), so the card
+/// cannot be missed and does not have to be reached with the arrows.
+class UpdateBanner extends StatefulWidget {
   const UpdateBanner({super.key, required this.update, required this.onDismiss});
 
   final AppUpdate update;
   final VoidCallback onDismiss;
 
   @override
+  State<UpdateBanner> createState() => _UpdateBannerState();
+}
+
+class _UpdateBannerState extends State<UpdateBanner> {
+  final _updateButton = FocusNode(debugLabel: 'update now');
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Only while the home screen is the one on the screen: a song that is
+      // open must keep the remote's focus.
+      if (mounted && (ModalRoute.of(context)?.isCurrent ?? true)) _updateButton.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _updateButton.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final update = widget.update;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: Material(
@@ -115,9 +143,13 @@ class UpdateBanner extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer)),
               ]),
               Row(mainAxisSize: MainAxisSize.min, children: [
-                FilledButton(onPressed: () => showUpdateDialog(context, update), child: Text(t.updateNow)),
+                FilledButton(
+                  focusNode: _updateButton,
+                  onPressed: () => showUpdateDialog(context, update),
+                  child: Text(t.updateNow),
+                ),
                 const SizedBox(width: 4),
-                TextButton(onPressed: onDismiss, child: Text(t.later)),
+                TextButton(onPressed: widget.onDismiss, child: Text(t.later)),
               ]),
             ],
           ),
