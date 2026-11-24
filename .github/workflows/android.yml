@@ -50,8 +50,13 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
-      - name: Build debug APK
-        run: flutter build apk --debug --build-number=${{ github.run_number }}
+      # A release build: compiled Dart instead of the debug interpreter, so
+      # the app starts in a few seconds on a TV instead of ~20. It is signed
+      # with the same key as before (app/android/app/keystore/debug.keystore),
+      # so it installs as an update over the earlier builds and the in-app
+      # updater keeps working.
+      - name: Build release APK
+        run: flutter build apk --release --build-number=${{ github.run_number }}
 
       # The APK always has the same name, so the link
       # https://github.com/mcbane23/guitar-learn-app/releases/latest/download/guitar-learn.apk
@@ -62,7 +67,7 @@ jobs:
         working-directory: .
         run: |
           mkdir -p dist
-          mv app/build/app/outputs/flutter-apk/app-debug.apk dist/guitar-learn.apk
+          mv app/build/app/outputs/flutter-apk/app-release.apk dist/guitar-learn.apk
           cat > dist/version.json <<EOF
           {
             "build": ${{ github.run_number }},

@@ -404,7 +404,8 @@ class FretboardPainter extends CustomPainter {
   }
 
   void _drawDot(Canvas canvas, NeckGeometry g, NeckDot d) {
-    if (d.fret <= 0 || d.fret > g.frets) return;
+    // A note that is not on one of the six strings has no place on the neck.
+    if (d.string < 1 || d.string > 6 || d.fret <= 0 || d.fret > g.frets) return;
     final c = Offset(g.fretCenterX(d.fret), g.stringY(d.string));
     final r = g.dotRadius(d.fret);
     final color = style.fingerColor(d.finger);

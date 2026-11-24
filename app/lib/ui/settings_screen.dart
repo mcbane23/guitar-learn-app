@@ -33,6 +33,14 @@ class SettingsScreen extends StatelessWidget {
           onChanged: (v) => s.update((x) => set(x, v)),
         );
 
+    // On a TV the sliders take only left and right from the remote; up and
+    // down move on to the next setting instead of changing the value, so
+    // everything under the sliders stays reachable.
+    Widget slider(Slider slider) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(navigationMode: NavigationMode.directional),
+          child: slider,
+        );
+
     final languages = <(AppLanguage?, String)>[
       (null, t.languageSystem),
       (AppLanguage.en, t.english),
@@ -81,25 +89,26 @@ class SettingsScreen extends StatelessWidget {
           toggle('${t.colors}: ${t.colorsHighContrast}', null, s.highContrast, (x, v) => x.highContrast = v),
           ListTile(
             title: Text(t.defaultSpeed, style: const TextStyle(fontSize: 18)),
-            subtitle: Slider(
+            subtitle: slider(Slider(
               value: s.defaultSpeed,
               min: 0.25,
               max: 1,
               divisions: 15,
               label: '${(s.defaultSpeed * 100).round()}%',
               onChanged: (v) => s.update((x) => x.defaultSpeed = v),
-            ),
+            )),
             trailing: Text('${(s.defaultSpeed * 100).round()}%', style: const TextStyle(fontSize: 18)),
           ),
           ListTile(
             title: Text(t.volume, style: const TextStyle(fontSize: 18)),
-            subtitle: Slider(
+            subtitle: slider(Slider(
               value: s.volume,
+              divisions: 20,
               onChanged: (v) {
                 s.update((x) => x.volume = v);
                 services.synth.setVolume(v);
               },
-            ),
+            )),
             trailing: Text('${(s.volume * 100).round()}%', style: const TextStyle(fontSize: 18)),
           ),
           header(t.songFiles),

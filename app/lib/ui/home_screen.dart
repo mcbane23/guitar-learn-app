@@ -76,12 +76,16 @@ class _HomeScreenState extends State<HomeScreen> {
             final searching = _query.text.trim().isNotEmpty || _difficulty != null;
             return CustomScrollView(
               slivers: [
-                SliverToBoxAdapter(child: _header(context, t)),
+                // Every sliver is keyed: when a row appears (the first
+                // "Recently played") the rows under it keep their widgets,
+                // and so the remote's focus.
+                SliverToBoxAdapter(key: const ValueKey('header'), child: _header(context, t)),
                 if (_update case final update?)
                   SliverToBoxAdapter(
+                    key: const ValueKey('update'),
                     child: UpdateBanner(update: update, onDismiss: () => setState(() => _update = null)),
                   ),
-                SliverToBoxAdapter(child: _searchBar(context, t)),
+                SliverToBoxAdapter(key: const ValueKey('search'), child: _searchBar(context, t)),
                 if (searching)
                   _results(context, t, searchSongs(all, _query.text, difficulty: _difficulty))
                 else ...[
@@ -94,7 +98,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   _section(context, t, t.kids, all.where((s) => s.tags.contains('kids')).toList()),
                   _section(context, t, t.serbianFolk, all.where((s) => s.tags.contains('serbian-folk')).toList()),
                   _section(context, t, t.allSongs, all, removable: true),
-                  if (mine.isEmpty) SliverToBoxAdapter(child: _AddSongsBanner(onTap: () => addSongsFlow(context))),
+                  if (mine.isEmpty)
+                    SliverToBoxAdapter(
+                      key: const ValueKey('add banner'),
+                      child: _AddSongsBanner(onTap: () => addSongsFlow(context)),
+                    ),
                 ],
                 const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
@@ -178,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final repo = AppServices.of(context).songs;
     final count = songs.length + (addCard ? 1 : 0);
     return SliverToBoxAdapter(
+      key: ValueKey('section $title'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -200,11 +209,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     itemCount: count,
                     separatorBuilder: (_, _) => const SizedBox(width: 14),
+                    // A card keeps its widget (and the remote's focus) when
+                    // the row reorders: "Recently played" moves the song
+                    // that was just opened to the front.
+                    findChildIndexCallback: (key) {
+                      if (key is! ValueKey<String>) return null;
+                      final i = songs.indexWhere((s) => s.id == key.value);
+                      return i < 0 ? null : i * 2; // items sit between separators
+                    },
                     itemBuilder: (context, i) {
                       if (i == songs.length) return _AddSongsCard(onTap: () => addSongsFlow(context));
                       final song = songs[i];
                       final imported = repo.isImported(song.id);
                       return SongCard(
+                        key: ValueKey(song.id),
                         song: song,
                         imported: imported,
                         autofocus: autofocus && i == 0,

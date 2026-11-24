@@ -147,6 +147,7 @@ class Strings {
   String currentBuild(int build) => _t('currentBuild', {'n': '$build'});
   String get tapChord => _t('tapChord');
   String get fingers => _t('fingers');
+  String get fretNumbersLegend => _t('fretNumbersLegend');
   String get songNotFound => _t('songNotFound');
   String get back => _t('back');
   String get mySongs => _t('mySongs');
@@ -342,6 +343,7 @@ class Strings {
     'currentBuild': 'Installed version: build {n}',
     'tapChord': 'Pick a chord to see and hear it',
     'fingers': 'Fingers: 1 index, 2 middle, 3 ring, 4 little',
+    'fretNumbersLegend': 'The number in a circle is the fret',
     'songNotFound': 'This song could not be opened',
     'back': 'Back',
     'mySongs': 'My songs',
@@ -520,6 +522,7 @@ class Strings {
     'currentBuild': 'Instalirana verzija: build {n}',
     'tapChord': 'Izaberi akord da ga vidiš i čuješ',
     'fingers': 'Prsti: 1 kažiprst, 2 srednji, 3 domali, 4 mali',
+    'fretNumbersLegend': 'Broj u kružiću je broj praga',
     'songNotFound': 'Ova pesma ne može da se otvori',
     'back': 'Nazad',
     'mySongs': 'Moje pesme',

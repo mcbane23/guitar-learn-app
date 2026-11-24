@@ -164,6 +164,63 @@ void main() {
     expect(focusedText(tester), contains('Play song'));
   });
 
+  testWidgets('back from a song returns the focus to the card that was opened', (tester) async {
+    await start(tester);
+    // The second beginner song, so "Recently played" (which appears above)
+    // and the row's order both change while it is open.
+    await press(tester, LogicalKeyboardKey.arrowRight);
+    final card = focusedText(tester);
+    expect(card, contains('Easy'));
+    await press(tester, LogicalKeyboardKey.select);
+    await waitFor(tester, find.text('Play'));
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Recently played'), findsOneWidget);
+    expect(focusedText(tester), card);
+  });
+
+  testWidgets('settings: the sliders take left and right; up and down move on', (tester) async {
+    await start(tester);
+    await press(tester, LogicalKeyboardKey.arrowUp, 2);
+    for (var i = 0; i < 8 && focusedText(tester) != 'Settings'; i++) {
+      await press(tester, LogicalKeyboardKey.arrowRight);
+    }
+    expect(focusedText(tester), 'Settings');
+    await press(tester, LogicalKeyboardKey.select);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Language'), findsOneWidget);
+
+    Slider? focusedSlider() => FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<Slider>();
+    for (var i = 0; i < 30 && focusedSlider() == null; i++) {
+      await press(tester, LogicalKeyboardKey.arrowDown);
+    }
+    final speed = focusedSlider();
+    expect(speed, isNotNull);
+    expect(speed!.value, 0.75);
+    // Left and right change the value.
+    await press(tester, LogicalKeyboardKey.arrowLeft);
+    expect(focusedSlider()!.value, closeTo(0.7, 1e-9));
+    await press(tester, LogicalKeyboardKey.arrowRight);
+    expect(focusedSlider()!.value, closeTo(0.75, 1e-9));
+    // Down goes on to the volume, and then past the sliders to the rest.
+    await press(tester, LogicalKeyboardKey.arrowDown);
+    expect(focusedSlider(), isNotNull);
+    expect(focusedSlider()!.value, isNot(0.75));
+    await press(tester, LogicalKeyboardKey.arrowDown);
+    expect(focusedSlider(), isNull);
+    for (var i = 0; i < 20 && !(focusedText(tester) ?? '').contains('Check for a new version'); i++) {
+      await press(tester, LogicalKeyboardKey.arrowDown);
+    }
+    expect(focusedText(tester), contains('Check for a new version'));
+    // Up comes back through the sliders without changing them.
+    for (var i = 0; i < 20 && focusedSlider() == null; i++) {
+      await press(tester, LogicalKeyboardKey.arrowUp);
+    }
+    await press(tester, LogicalKeyboardKey.arrowUp);
+    expect(focusedSlider()!.value, 0.75);
+  });
+
   testWidgets('free play: arrows walk the neck and OK plays the note', (tester) async {
     final (_, synth) = await start(tester);
     await press(tester, LogicalKeyboardKey.arrowUp, 2);

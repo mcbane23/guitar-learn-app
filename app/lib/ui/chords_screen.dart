@@ -121,7 +121,11 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    shape == null ? t.tapChord : t.fingers,
+                    shape == null
+                        ? t.tapChord
+                        : settings.dotLabel == DotLabel.fret
+                            ? t.fretNumbersLegend
+                            : t.fingers,
                     style: const TextStyle(fontSize: 15, color: Colors.white70),
                     overflow: TextOverflow.ellipsis,
                   ),
