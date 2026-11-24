@@ -4,6 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/strings.dart';
 import '../ui/themes.dart';
 
+/// What the number in a finger dot on the neck means.
+enum DotLabel {
+  /// Which finger of the left hand presses (1 = index ... 4 = pinky).
+  finger,
+
+  /// Which fret is pressed.
+  fret,
+}
+
 /// User settings, stored on the device only.
 class AppSettings extends ChangeNotifier {
   AppSettings._(this._prefs);
@@ -28,6 +37,7 @@ class AppSettings extends ChangeNotifier {
   bool leftHanded = false;
   bool thinStringOnTop = true;
   bool showNoteNames = false;
+  DotLabel dotLabel = DotLabel.finger;
   bool showChordName = true;
   bool highContrast = false;
   AppColorTheme colorTheme = AppColorTheme.classic;
@@ -56,6 +66,8 @@ class AppSettings extends ChangeNotifier {
     leftHanded = p.getBool('leftHanded') ?? leftHanded;
     thinStringOnTop = p.getBool('thinStringOnTop') ?? thinStringOnTop;
     showNoteNames = p.getBool('showNoteNames') ?? showNoteNames;
+    final dot = p.getString('dotLabel');
+    dotLabel = DotLabel.values.where((d) => d.name == dot).firstOrNull ?? dotLabel;
     showChordName = p.getBool('showChordName') ?? showChordName;
     highContrast = p.getBool('highContrast') ?? highContrast;
     final theme = p.getString('colorTheme');
@@ -89,6 +101,7 @@ class AppSettings extends ChangeNotifier {
     p.setBool('leftHanded', leftHanded);
     p.setBool('thinStringOnTop', thinStringOnTop);
     p.setBool('showNoteNames', showNoteNames);
+    p.setString('dotLabel', dotLabel.name);
     p.setBool('showChordName', showChordName);
     p.setBool('highContrast', highContrast);
     p.setString('colorTheme', colorTheme.name);

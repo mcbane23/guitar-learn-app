@@ -77,6 +77,7 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
       leftHanded: settings.leftHanded,
       thinOnTop: settings.thinStringOnTop,
       highContrast: settings.highContrast,
+      fretNumbers: settings.dotLabel == DotLabel.fret,
     );
     String? name(int s, int f) =>
         settings.showNoteNames ? noteName(standardTuning[s - 1] + f, serbian: t.language.isSerbian) : null;

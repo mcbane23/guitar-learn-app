@@ -97,6 +97,13 @@ class Strings {
   String get thinStringTop => _t('thinStringTop');
   String get thinStringTopHint => _t('thinStringTopHint');
   String get showNoteNames => _t('showNoteNames');
+  String get dotLabel => _t('dotLabel');
+  String get dotLabelFinger => _t('dotLabelFinger');
+  String get dotLabelFingerHint => _t('dotLabelFingerHint');
+  String get dotLabelFret => _t('dotLabelFret');
+  String get dotLabelFretHint => _t('dotLabelFretHint');
+  String get back1Bar => _t('back1Bar');
+  String get forward1Bar => _t('forward1Bar');
   String get showChordName => _t('showChordName');
   String get colors => _t('colors');
   String get colorsBright => _t('colorsBright');
@@ -235,6 +242,13 @@ class Strings {
     'thinStringTop': 'Thin string on top',
     'thinStringTopHint': 'Like written tabs. Turn off to see the guitar as you look down at it.',
     'showNoteNames': 'Show note names',
+    'dotLabel': 'Number in the circles',
+    'dotLabelFinger': 'Finger number',
+    'dotLabelFingerHint': '1 index, 2 middle, 3 ring, 4 pinky',
+    'dotLabelFret': 'Fret number',
+    'dotLabelFretHint': 'The same number that is written under the neck',
+    'back1Bar': 'Bar back',
+    'forward1Bar': 'Bar forward',
     'showChordName': 'Show chord name',
     'colors': 'Colors',
     'colorsBright': 'Bright',
@@ -359,6 +373,13 @@ class Strings {
     'thinStringTop': 'Tanka žica gore',
     'thinStringTopHint': 'Kao u tabulaturama. Isključi da vidiš gitaru kao kad gledaš odozgo.',
     'showNoteNames': 'Prikaži imena tonova',
+    'dotLabel': 'Broj u kružićima',
+    'dotLabelFinger': 'Broj prsta',
+    'dotLabelFingerHint': '1 kažiprst, 2 srednji, 3 domali, 4 mali',
+    'dotLabelFret': 'Broj praga',
+    'dotLabelFretHint': 'Isti broj koji piše ispod vrata gitare',
+    'back1Bar': 'Takt nazad',
+    'forward1Bar': 'Takt napred',
     'showChordName': 'Prikaži ime akorda',
     'colors': 'Boje',
     'colorsBright': 'Vesele',

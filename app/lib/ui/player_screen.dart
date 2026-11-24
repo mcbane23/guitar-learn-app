@@ -101,7 +101,9 @@ class _PlayerScreenState extends State<PlayerScreen>
     final old = _controller;
     if (old == null || index == old.song.partIndex) return;
     final next = _newController(old.song.withPart(index), speed: old.speed, track: old.track)
-      ..addListener(_controllerChanged);
+      ..addListener(_controllerChanged)
+      // Another guitar takes over mid-song: same place, no restart.
+      ..continueFrom(old);
     old.dispose();
     setState(() => _controller = next);
     _controllerChanged();
@@ -141,8 +143,14 @@ class _PlayerScreenState extends State<PlayerScreen>
         const SingleActivator(LogicalKeyboardKey.mediaPlay): c.play,
         const SingleActivator(LogicalKeyboardKey.mediaPause): c.pause,
         const SingleActivator(LogicalKeyboardKey.mediaStop): c.pause,
-        const SingleActivator(LogicalKeyboardKey.mediaRewind): c.restart,
-        const SingleActivator(LogicalKeyboardKey.mediaFastForward): () => c.setSpeed(c.speed + 0.05),
+        // Rewind and forward on the remote step a bar at a time; the
+        // previous/next track keys do the same on remotes that have them.
+        const SingleActivator(LogicalKeyboardKey.mediaRewind): () => c.seekBars(-1),
+        const SingleActivator(LogicalKeyboardKey.mediaFastForward): () => c.seekBars(1),
+        const SingleActivator(LogicalKeyboardKey.mediaTrackPrevious): () => c.seekBars(-1),
+        const SingleActivator(LogicalKeyboardKey.mediaTrackNext): () => c.seekBars(1),
+        const SingleActivator(LogicalKeyboardKey.mediaSkipBackward): () => c.seekBars(-1),
+        const SingleActivator(LogicalKeyboardKey.mediaSkipForward): () => c.seekBars(1),
         const SingleActivator(LogicalKeyboardKey.channelUp): () => c.setSpeed(c.speed + 0.05),
         const SingleActivator(LogicalKeyboardKey.channelDown): () => c.setSpeed(c.speed - 0.05),
       },
@@ -346,6 +354,7 @@ class _Neck extends StatelessWidget {
       leftHanded: settings.leftHanded,
       thinOnTop: settings.thinStringOnTop,
       highContrast: settings.highContrast,
+      fretNumbers: settings.dotLabel == DotLabel.fret,
       // The built-in songs fit 12 frets; songs from files may go higher.
       frets: math.max(12, controller.song.maxFret).clamp(12, 24),
     );
@@ -480,8 +489,11 @@ class _Controls extends StatelessWidget {
 
   static const _speedStep = 0.05;
 
-  /// Below this width (logical pixels) the controls lose their labels.
+  /// Below this width (logical pixels) the player uses the short texts.
   static const compactWidth = 700.0;
+
+  /// Below this width the buttons under the neck lose their labels.
+  static const labelsWidth = 900.0;
 
   @override
   Widget build(BuildContext context) {
@@ -489,7 +501,8 @@ class _Controls extends StatelessWidget {
     return LayoutBuilder(builder: (context, box) {
       // A phone held sideways is narrow: the words under the small buttons
       // go (they stay as tooltips) so the row never runs off the screen.
-      final compact = box.maxWidth < compactWidth;
+      // With nine buttons the words need a little more room than the top bar.
+      final compact = box.maxWidth < labelsWidth;
       return ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
@@ -517,6 +530,12 @@ class _Controls extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 toggle(Icons.replay_rounded, t.restart, false, c.restart),
+                // One bar back or forward: the only way to move through the
+                // song with a remote, since the progress bar is not focusable.
+                // They stay enabled at both ends, so the remote's focus never
+                // jumps away when the song reaches the start or the end.
+                toggle(Icons.fast_rewind_rounded, t.back1Bar, false, () => c.seekBars(-1)),
+                toggle(Icons.fast_forward_rounded, t.forward1Bar, false, () => c.seekBars(1)),
                 toggle(Icons.front_hand_rounded, t.waitMode, c.waitMode, () => c.setWaitMode(!c.waitMode)),
                 const Spacer(),
                 toggle(

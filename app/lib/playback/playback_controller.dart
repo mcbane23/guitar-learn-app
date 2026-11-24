@@ -56,6 +56,10 @@ class PlaybackController extends ChangeNotifier {
 
   static const countInBeats = 3;
 
+  /// The count-in takes one second per count, whatever the song's tempo or
+  /// the speed setting, so "3-2-1" always feels the same.
+  static const countInSecondsPerBeat = 1.0;
+
   final Song song;
   final ChordLibrary chords;
   final Synth synth;
@@ -118,16 +122,17 @@ class PlaybackController extends ChangeNotifier {
 
   // ---- Controls ----------------------------------------------------------
 
-  void play() {
+  /// Starts playing. [withCountIn] overrides the count-in setting, for
+  /// example to go straight on when another part takes over mid-song.
+  void play({bool? withCountIn}) {
     if (isPlaying) return;
     if (_finished || _position >= totalBeats) seek(0);
     _finished = false;
-    if (countIn && !_waitMode) {
+    if ((withCountIn ?? countIn) && !_waitMode) {
       _countdownStart = _clock();
       _countdown = countInBeats;
-      final spb = 1000 / beatsPerSecond;
       for (var i = 0; i < countInBeats; i++) {
-        synth.click(accent: i == 0, delayMs: i * spb);
+        synth.click(accent: i == 0, delayMs: i * countInSecondsPerBeat * 1000);
       }
     } else {
       _startClock();
@@ -167,6 +172,19 @@ class PlaybackController extends ChangeNotifier {
     _scheduledUntil = _position;
     if (_playing) synth.stopAll();
     notifyListeners();
+  }
+
+  /// Moves [bars] bars back (negative) or forward from the nearest bar line,
+  /// so a remote's rewind and forward keys step through the song bar by bar.
+  /// Playing goes on from the new place; a finished song can be rewound.
+  void seekBars(int bars) {
+    final bpb = song.beatsPerBar.toDouble();
+    final bar = _position / bpb;
+    // Forward goes to the next bar line. Back goes to the start of this bar,
+    // or to the previous bar when this one has only just begun (within a
+    // beat), so pressing again and again walks back a bar at a time.
+    final from = bars > 0 ? bar.floor() : (bar - 1 / bpb).ceil();
+    seek((from + bars) * bpb);
   }
 
   void setSpeed(double value) {
@@ -242,6 +260,19 @@ class PlaybackController extends ChangeNotifier {
   /// How many bars the loop covers (0 without a loop).
   int get loopBars => _loop == null ? 0 : ((_loop!.end - _loop!.start) / song.beatsPerBar).ceil();
 
+  /// Takes over where [other] is: same place, speed, modes, and still
+  /// playing if it was, with no count-in. Used when another part (guitar)
+  /// of the same song is chosen while it plays.
+  void continueFrom(PlaybackController other) {
+    _speed = other.speed;
+    _soundMode = other.soundMode == SoundMode.accompany && !song.hasEasy ? SoundMode.song : other.soundMode;
+    _metronome = other.metronome;
+    _waitMode = other.waitMode;
+    _loop = other.loop == null ? null : (start: other.loop!.start, end: math.min(other.loop!.end, totalBeats));
+    seek(other.position);
+    if (other.isPlaying || other.waiting) play(withCountIn: false);
+  }
+
   /// In wait mode: the player played the note, move on to the next one.
   void next() {
     if (!_waiting) {
@@ -282,13 +313,13 @@ class PlaybackController extends ChangeNotifier {
   void tick() {
     final now = _clock();
     if (_countdown != null) {
-      final beats = (now - _countdownStart) * beatsPerSecond;
-      if (beats >= countInBeats) {
+      final counts = (now - _countdownStart) / countInSecondsPerBeat;
+      if (counts >= countInBeats) {
         _countdown = null;
         _startClock();
-        _anchorTime = _countdownStart + countInBeats / beatsPerSecond;
+        _anchorTime = _countdownStart + countInBeats * countInSecondsPerBeat;
       } else {
-        final c = countInBeats - beats.floor();
+        final c = countInBeats - counts.floor();
         if (c != _countdown) {
           _countdown = c;
           notifyListeners();

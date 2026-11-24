@@ -107,11 +107,20 @@ class NeckScene {
 }
 
 class NeckStyle {
-  const NeckStyle({this.leftHanded = false, this.thinOnTop = true, this.highContrast = false, this.frets = 12});
+  const NeckStyle({
+    this.leftHanded = false,
+    this.thinOnTop = true,
+    this.highContrast = false,
+    this.frets = 12,
+    this.fretNumbers = false,
+  });
 
   final bool leftHanded;
   final bool thinOnTop;
   final bool highContrast;
+
+  /// Write the fret number in each dot instead of the finger number.
+  final bool fretNumbers;
 
   /// How many frets the neck shows (12 for the built-in songs, up to 24
   /// for songs that go higher).
@@ -123,10 +132,11 @@ class NeckStyle {
       other.leftHanded == leftHanded &&
       other.thinOnTop == thinOnTop &&
       other.highContrast == highContrast &&
-      other.frets == frets;
+      other.frets == frets &&
+      other.fretNumbers == fretNumbers;
 
   @override
-  int get hashCode => Object.hash(leftHanded, thinOnTop, highContrast, frets);
+  int get hashCode => Object.hash(leftHanded, thinOnTop, highContrast, frets, fretNumbers);
 
   List<Color> get fingerColors => highContrast
       ? const [Color(0xFFFFFFFF), Color(0xFF00B7FF), Color(0xFF00E676), Color(0xFFFFEA00), Color(0xFFFF1744)]
@@ -432,11 +442,15 @@ class FretboardPainter extends CustomPainter {
         ..color = Colors.white.withValues(alpha: 0.9 * o),
     );
     final textColor = style.fingerTextColor(d.finger).withValues(alpha: o);
+    // The dot keeps its finger color either way; only the number changes.
+    final number = style.fretNumbers ? '${d.fret}' : (d.finger > 0 ? '${d.finger}' : '');
+    // Two digits (frets 10 and up) need smaller text to stay inside the dot.
+    final fit = number.length > 1 ? 0.78 : 1.0;
     if (d.label != null) {
-      _text(canvas, d.finger > 0 ? '${d.finger}' : '', c.translate(0, -rr * 0.2), rr * 0.95, textColor);
+      _text(canvas, number, c.translate(0, -rr * 0.2), rr * 0.95 * fit, textColor);
       _text(canvas, d.label!, c.translate(0, rr * 0.5), rr * 0.55, textColor);
-    } else if (d.finger > 0) {
-      _text(canvas, '${d.finger}', c, rr * 1.15, textColor);
+    } else if (number.isNotEmpty) {
+      _text(canvas, number, c, rr * 1.15 * fit, textColor);
     }
   }
 

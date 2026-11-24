@@ -121,6 +121,65 @@ void main() {
     expect(c.position, closeTo(0.2, 1e-9));
   });
 
+  test('count-in takes one second per count at any speed', () {
+    c.countIn = true;
+    c.setSpeed(0.5);
+    c.play();
+    expect(c.countdown, 3);
+    expect(synth.clicks.map((k) => k.delayMs), [0, 1000, 2000]);
+    now = 2.5;
+    c.tick();
+    expect(c.countdown, 1);
+    now = 3.0;
+    c.tick();
+    expect(c.countdown, isNull);
+    expect(c.position, closeTo(0, 1e-9));
+  });
+
+  test('seekBars steps a bar at a time', () {
+    c.seek(2.4);
+    c.seekBars(1); // the next bar line
+    expect(c.position, 4);
+    c.seekBars(-1);
+    expect(c.position, 0);
+    c.seekBars(-1);
+    expect(c.position, 0);
+    c.seek(4.5); // just into bar 2: back goes to the previous bar
+    c.seekBars(-1);
+    expect(c.position, 0);
+    c.seek(7.0); // deep into bar 2: back goes to its start
+    c.seekBars(-1);
+    expect(c.position, 4);
+    c.seekBars(100);
+    expect(c.position, c.totalBeats);
+    c.seekBars(-1);
+    expect(c.position, 4);
+  });
+
+  test('another part continues from the same place without a count-in', () {
+    c.countIn = true;
+    c.setSpeed(0.5);
+    c.setMetronome(true);
+    c.play();
+    now = 3.0; // count-in over
+    c.tick();
+    now = 5.0; // one beat in at 50%
+    c.tick();
+    expect(c.position, closeTo(1.0, 1e-9));
+    final other = PlaybackController(
+        song: _song(), chords: _chords, synth: synth, countIn: true, clock: () => now, autoTick: false)
+      ..continueFrom(c);
+    expect(other.position, closeTo(1.0, 1e-9));
+    expect(other.speed, 0.5);
+    expect(other.metronome, isTrue);
+    expect(other.countdown, isNull);
+    expect(other.isPlaying, isTrue);
+    now = 7.0;
+    other.tick();
+    expect(other.position, closeTo(2.0, 1e-9));
+    other.dispose();
+  });
+
   test('chord mode strums every string of the chord softly under the melody', () {
     c.setTrack(TrackKind.easy);
     c.play();

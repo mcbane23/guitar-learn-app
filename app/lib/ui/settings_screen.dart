@@ -57,6 +57,17 @@ class SettingsScreen extends StatelessWidget {
               trailing: _ThemeSwatch(theme),
               onTap: () => s.update((x) => x.colorTheme = theme),
             ),
+          header(t.dotLabel),
+          for (final (label, hint, value) in [
+            (t.dotLabelFinger, t.dotLabelFingerHint, DotLabel.finger),
+            (t.dotLabelFret, t.dotLabelFretHint, DotLabel.fret),
+          ])
+            ListTile(
+              title: Text(label, style: const TextStyle(fontSize: 18)),
+              subtitle: Text(hint),
+              leading: Icon(s.dotLabel == value ? Icons.radio_button_checked : Icons.radio_button_off),
+              onTap: () => s.update((x) => x.dotLabel = value),
+            ),
           header(t.settings),
           toggle(t.leftHanded, t.leftHandedHint, s.leftHanded, (x, v) => x.leftHanded = v),
           toggle(t.thinStringTop, t.thinStringTopHint, s.thinStringOnTop, (x, v) => x.thinStringOnTop = v),
