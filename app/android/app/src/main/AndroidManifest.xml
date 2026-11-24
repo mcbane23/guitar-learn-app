@@ -6,13 +6,18 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
     <uses-feature android:name="android.software.leanback" android:required="false"/>
 
+    <!-- The application label is written out, not a resource: the Android
+         installer reads it straight from the downloaded APK and showed
+         "android.app.Application" when it could not resolve the resource.
+         The activity below carries the translated name for the launcher. -->
     <application
-        android:label="@string/app_name"
+        android:label="Guitar Learn"
         android:banner="@drawable/tv_banner"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
+            android:label="@string/app_name"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
