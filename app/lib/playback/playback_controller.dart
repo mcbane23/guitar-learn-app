@@ -11,7 +11,7 @@ import 'cue.dart';
 enum TrackKind { easy, full }
 
 /// How a cue is voiced when it is played.
-enum _Voice { lead, melody, backing, accompany }
+enum _Voice { lead, melody, backing, accompany, second }
 
 /// What the app plays out loud.
 enum SoundMode {
@@ -69,6 +69,11 @@ class PlaybackController extends ChangeNotifier {
 
   late final List<Cue> _easyCues;
   late final List<Cue> _fullCues;
+
+  /// Another part of the same song shown on a second neck and played along
+  /// (for example the bass under the lead guitar). Null when there is none.
+  Song? _secondSong;
+  List<Cue> _secondCues = const [];
   late TrackKind _track;
   late double _speed;
 
@@ -80,6 +85,10 @@ class PlaybackController extends ChangeNotifier {
   double _anchorTime = 0;
   double _scheduledUntil = 0;
   bool _finished = false;
+
+  /// Set when another controller took over mid-song: this one must not
+  /// silence the synthesizer when it goes, or the ringing notes would cut off.
+  bool _handedOver = false;
 
   SoundMode _soundMode = SoundMode.song;
   bool _metronome = false;
@@ -109,6 +118,28 @@ class PlaybackController extends ChangeNotifier {
   bool get waitMode => _waitMode;
   bool get waiting => _waiting;
   ({double start, double end})? get loop => _loop;
+
+  /// The part shown on the second neck, or null.
+  Song? get secondSong => _secondSong;
+  int? get secondPart => _secondSong?.partIndex;
+  List<Cue> get secondCues => _secondCues;
+
+  /// Shows [index] (one of [Song.parts]) on a second neck under the main
+  /// one, and plays it along. Null hides the second neck.
+  void setSecondPart(int? index) {
+    if (index == null || index < 0 || index >= song.parts.length || index == song.partIndex) {
+      if (_secondSong == null) return;
+      _secondSong = null;
+      _secondCues = const [];
+    } else {
+      if (_secondSong?.partIndex == index) return;
+      _secondSong = song.withPart(index);
+      _secondCues = cuesFromNotes(_secondSong!.full);
+    }
+    // What was handed to the synthesizer stays; the new mix starts from here.
+    _scheduledUntil = math.max(_scheduledUntil, _position);
+    notifyListeners();
+  }
 
   double get beatsPerSecond => song.tempo / 60 * _speed;
   int get beatInBar => (_position.floor()) % song.beatsPerBar;
@@ -269,8 +300,21 @@ class PlaybackController extends ChangeNotifier {
     _metronome = other.metronome;
     _waitMode = other.waitMode;
     _loop = other.loop == null ? null : (start: other.loop!.start, end: math.min(other.loop!.end, totalBeats));
-    seek(other.position);
+    // The second neck stays; if it showed the part that is now the main
+    // one, the two swap places.
+    setSecondPart(other.secondPart == song.partIndex ? other.song.partIndex : other.secondPart);
+    _position = other.position.clamp(0.0, totalBeats);
+    _finished = false;
+    _waitIndex = firstCueAtOrAfter(cues, _position);
+    _reanchor();
+    // Notes already handed to the synthesizer keep sounding; this part
+    // picks up from the moment the old one had scheduled up to.
+    _scheduledUntil = math.max(_position, math.min(other._scheduledUntil, totalBeats));
+    other._handedOver = true;
+    other._timer?.cancel();
+    other._timer = null;
     if (other.isPlaying || other.waiting) play(withCountIn: false);
+    notifyListeners();
   }
 
   /// In wait mode: the player played the note, move on to the next one.
@@ -391,16 +435,25 @@ class PlaybackController extends ChangeNotifier {
 
   List<(List<Cue>, _Voice)> _soundTracks() => switch (_soundMode) {
         SoundMode.mute => const [],
-        SoundMode.song => _track == TrackKind.full || !song.hasFull
-            ? [(cues, _Voice.lead)]
-            // Chords alone do not tell which song it is: play the melody on
-            // top and the strums softly underneath, like a singer with a guitar.
-            : [(_easyCues, _Voice.backing), (_fullCues, _Voice.melody)],
+        SoundMode.song => [
+            if (_track == TrackKind.full || !song.hasFull)
+              (cues, _Voice.lead)
+            else ...[
+              // Chords alone do not tell which song it is: play the melody on
+              // top and the strums softly underneath, like a singer with a guitar.
+              (_easyCues, _Voice.backing),
+              (_fullCues, _Voice.melody),
+            ],
+            if (_secondSong != null) (_secondCues, _Voice.second),
+          ],
         SoundMode.accompany => [(_easyCues, _Voice.accompany)],
       };
 
   void _sound(Cue cue, double delayMs, _Voice voice) {
     if (_soundMode == SoundMode.mute) return;
+    // The second part has its own tuning (a bass, a capo), so its pitches
+    // come from that part.
+    final part = voice == _Voice.second ? _secondSong! : song;
     final msPerBeat = 1000 / beatsPerSecond;
     final duration = cue.length * msPerBeat;
     final notes = <SynthNote>[];
@@ -415,17 +468,18 @@ class PlaybackController extends ChangeNotifier {
       _Voice.backing => cue.strum == Strum.up ? 0.3 : 0.45,
       _Voice.melody => 0.95,
       _Voice.lead => cue.strum == Strum.up ? 0.6 : 0.85,
+      _Voice.second => 0.7,
     };
     for (var k = 0; k < strings.length; k++) {
       final s = strings[k];
       notes.add(SynthNote(
-        midi: song.pitch(s, cue.fretOn(s)),
+        midi: part.pitch(s, cue.fretOn(s)),
         velocity: baseVelocity,
         delayMs: math.max(0, delayMs) + k * spacing,
         durationMs: duration,
-        // Backing strums are not tied to a string, so they never cut off a
-        // melody note that happens to be on the same string.
-        string: voice == _Voice.backing ? 0 : s,
+        // Backing strums and the second part are not tied to a string, so
+        // they never cut off a lead note that happens to be on the same string.
+        string: voice == _Voice.backing || voice == _Voice.second ? 0 : s,
       ));
     }
     synth.play(notes);
@@ -434,7 +488,7 @@ class PlaybackController extends ChangeNotifier {
   @override
   void dispose() {
     _timer?.cancel();
-    synth.stopAll();
+    if (!_handedOver) synth.stopAll();
     super.dispose();
   }
 }

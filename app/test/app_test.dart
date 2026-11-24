@@ -8,6 +8,7 @@ import 'package:guitar_learn/audio/synth.dart';
 import 'package:guitar_learn/data/song_repository.dart';
 import 'package:guitar_learn/l10n/strings.dart';
 import 'package:guitar_learn/settings/settings.dart';
+import 'package:guitar_learn/ui/fretboard.dart';
 import 'package:guitar_learn/ui/add_songs.dart';
 import 'package:guitar_learn/ui/themes.dart';
 import 'package:http/http.dart' as http;
@@ -124,9 +125,29 @@ void main() {
     await tester.tap(find.byIcon(Icons.repeat_rounded));
     await tester.pump();
     expect(find.text('Repeat part'), findsOneWidget);
+
+    // The other guitar can be shown on a second neck underneath.
+    expect(find.text('Second instrument underneath'), findsOneWidget);
+    await tester.tap(find.text('Lead Guitar').last);
+    await tester.pump();
+    expect(find.byType(FretboardView), findsNWidgets(2));
     await tester.tapAt(const Offset(20, 20)); // close the sheet
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(FretboardView), findsNWidgets(2));
+    expect(find.text('Lead Guitar'), findsOneWidget); // its name sits in the corner
+    expect(tester.takeException(), isNull);
+
+    // Choosing the part on the second neck as the main one swaps the two.
+    await tester.tap(find.text('Rhythm Guitar').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Lead Guitar').last);
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(find.byType(FretboardView), findsNWidgets(2));
+    expect(find.textContaining('Tuning'), findsNothing); // the lead guitar is in standard tuning
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pump();

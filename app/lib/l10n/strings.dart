@@ -103,6 +103,8 @@ class Strings {
   String get dotLabelFret => _t('dotLabelFret');
   String get dotLabelFretHint => _t('dotLabelFretHint');
   String get back1Bar => _t('back1Bar');
+  String get secondPart => _t('secondPart');
+  String get none => _t('none');
   String get forward1Bar => _t('forward1Bar');
   String get showChordName => _t('showChordName');
   String get colors => _t('colors');
@@ -248,6 +250,8 @@ class Strings {
     'dotLabelFret': 'Fret number',
     'dotLabelFretHint': 'The same number that is written under the neck',
     'back1Bar': 'Bar back',
+    'secondPart': 'Second instrument underneath',
+    'none': 'None',
     'forward1Bar': 'Bar forward',
     'showChordName': 'Show chord name',
     'colors': 'Colors',
@@ -379,6 +383,8 @@ class Strings {
     'dotLabelFret': 'Broj praga',
     'dotLabelFretHint': 'Isti broj koji piše ispod vrata gitare',
     'back1Bar': 'Takt nazad',
+    'secondPart': 'Drugi instrument ispod',
+    'none': 'Nijedan',
     'forward1Bar': 'Takt napred',
     'showChordName': 'Prikaži ime akorda',
     'colors': 'Boje',

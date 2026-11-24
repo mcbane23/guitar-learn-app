@@ -156,6 +156,47 @@ void main() {
     expect(c.position, 4);
   });
 
+  test('a second part plays along in its own tuning and swaps on handover', () {
+    final song = Song.fromJson({
+      'id': 'two',
+      'title': {'en': 'Two'},
+      'tempo': 60,
+      'timeSignature': [4, 4],
+      'tracks': {
+        'full': [
+          {'beat': 0, 'string': 1, 'fret': 0, 'finger': 0, 'length': 1},
+        ],
+      },
+      'parts': [
+        {'name': 'Lead', 'notes': [{'beat': 0, 'string': 1, 'fret': 0, 'finger': 0, 'length': 1}]},
+        {
+          'name': 'Bass',
+          'tuning': ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
+          'notes': [{'beat': 0, 'string': 6, 'fret': 0, 'finger': 0, 'length': 1}],
+        },
+      ],
+    });
+    final c2 = PlaybackController(song: song, chords: _chords, synth: synth, countIn: false, clock: () => now, autoTick: false);
+    c2.setSecondPart(1);
+    expect(c2.secondSong?.parts[1].name, 'Bass');
+    c2.play();
+    c2.tick();
+    // The open high E of the lead and the open low D of the bass sound together.
+    expect(synth.notes.map((n) => n.midi).toSet(), {64, 38});
+    expect(synth.notes.where((n) => n.midi == 38).single.string, 0); // never cuts a lead note
+
+    // The bass becomes the main part: the lead moves to the second neck.
+    final c3 = PlaybackController(song: song.withPart(1), chords: _chords, synth: synth, countIn: false, clock: () => now, autoTick: false)
+      ..continueFrom(c2);
+    expect(c3.secondPart, 0);
+    expect(c3.isPlaying, isTrue);
+    c2.dispose();
+    expect(synth.stops, 0); // the hand-over does not silence the ringing notes
+    c3.setSecondPart(null);
+    expect(c3.secondSong, isNull);
+    c3.dispose();
+  });
+
   test('another part continues from the same place without a count-in', () {
     c.countIn = true;
     c.setSpeed(0.5);
