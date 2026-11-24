@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -227,36 +225,35 @@ class _TopBar extends StatelessWidget {
                   ),
                 ),
                 if (song.parts.length > 1)
-                  PopupMenuButton<int>(
-                    tooltip: t.part,
-                    initialValue: song.partIndex,
-                    onSelected: onPart,
-                    itemBuilder: (_) => [
-                      for (final (i, p) in song.parts.indexed) PopupMenuItem(value: i, child: Text(p.name)),
-                    ],
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: scheme.surfaceContainerHigh,
+                  Tooltip(
+                    message: t.part,
+                    child: Material(
+                      color: scheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.queue_music_rounded, size: 20),
-                        const SizedBox(width: 6),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 160),
-                          child: Text(
-                            song.parts[song.partIndex].name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                          ),
+                        onTap: () => _choosePart(context),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(Icons.queue_music_rounded, size: 20),
+                            const SizedBox(width: 6),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 160),
+                              child: Text(
+                                song.parts[song.partIndex].name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down_rounded),
+                          ]),
                         ),
-                        const Icon(Icons.arrow_drop_down_rounded),
-                      ]),
+                      ),
                     ),
                   ),
+                if (song.parts.length > 1) const SizedBox(width: 8),
                 if (settings.showChordName && chord != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
@@ -307,6 +304,45 @@ class _TopBar extends StatelessWidget {
       );
     });
   }
+
+  /// The list of parts (guitars) in the file. With a remote the part that
+  /// is playing now is selected when the list opens, and choosing one
+  /// closes the list.
+  void _choosePart(BuildContext context) {
+    final t = Strings.of(context);
+    final song = controller.song;
+    final scheme = Theme.of(context).colorScheme;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: 12),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Text(t.part, style: TextStyle(fontSize: 15, color: scheme.primary, fontWeight: FontWeight.w600)),
+            ),
+            for (final (i, p) in song.parts.indexed)
+              ListTile(
+                autofocus: i == song.partIndex,
+                leading: const Icon(Icons.queue_music_rounded),
+                title: Text(p.name, style: const TextStyle(fontSize: 18)),
+                trailing: Icon(
+                  i == song.partIndex ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: i == song.partIndex ? scheme.primary : null,
+                ),
+                onTap: () {
+                  Navigator.of(sheet).pop();
+                  onPart(i);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// One dot per beat of the bar; the current beat lights up.
@@ -353,7 +389,9 @@ class _Neck extends StatelessWidget {
         highContrast: settings.highContrast,
         fretNumbers: settings.dotLabel == DotLabel.fret,
         // The built-in songs fit 12 frets; songs from files may go higher.
-        frets: math.max(12, song.maxFret).clamp(12, 24),
+        // One spare fret after the highest note keeps a dot on the highest
+        // fret, and the ring that closes in on it, inside the screen.
+        frets: song.maxFret < 12 ? 12 : (song.maxFret + 1).clamp(12, 24),
       );
 
   @override
@@ -685,10 +723,18 @@ class _Controls extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                     child: Text(t.secondPart, style: TextStyle(fontSize: 15, color: scheme.primary, fontWeight: FontWeight.w600)),
                   ),
-                  option(Icons.hide_source_rounded, t.none, c.secondPart == null, () => c.setSecondPart(null)),
+                  // Choosing a part is the end of the visit: the sheet closes
+                  // (with a remote, Back would otherwise be one more press).
+                  option(Icons.hide_source_rounded, t.none, c.secondPart == null, () {
+                    c.setSecondPart(null);
+                    Navigator.of(context).pop();
+                  }),
                   for (final (i, p) in c.song.parts.indexed)
                     if (i != c.song.partIndex)
-                      option(Icons.queue_music_rounded, p.name, c.secondPart == i, () => c.setSecondPart(i)),
+                      option(Icons.queue_music_rounded, p.name, c.secondPart == i, () {
+                        c.setSecondPart(i);
+                        Navigator.of(context).pop();
+                      }),
                 ],
               ],
             ),

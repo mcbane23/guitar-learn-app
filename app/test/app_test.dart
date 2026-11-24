@@ -103,6 +103,9 @@ void main() {
     await tester.tap(find.text('Lead Guitar'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    // The list opens on the part that is playing, so a remote starts there.
+    final focused = FocusManager.instance.primaryFocus?.context?.findAncestorWidgetOfExactType<ListTile>();
+    expect((focused?.title as Text?)?.data, 'Lead Guitar');
     await tester.tap(find.text('Rhythm Guitar').last);
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 200)); // the menu closes
@@ -130,11 +133,9 @@ void main() {
     expect(find.text('Second instrument underneath'), findsOneWidget);
     await tester.tap(find.text('Lead Guitar').last);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500)); // the sheet closes by itself
     expect(find.byType(FretboardView), findsNWidgets(2));
-    await tester.tapAt(const Offset(20, 20)); // close the sheet
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(FretboardView), findsNWidgets(2));
+    expect(find.text('Second instrument underneath'), findsNothing);
     expect(find.text('Lead Guitar'), findsOneWidget); // its name sits in the corner
     expect(tester.takeException(), isNull);
 
