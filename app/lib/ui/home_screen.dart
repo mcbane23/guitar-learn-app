@@ -89,6 +89,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (searching)
                   _results(context, t, searchSongs(all, _query.text, difficulty: _difficulty))
                 else ...[
+                  if (recent.isNotEmpty)
+                    SliverToBoxAdapter(
+                      key: const ValueKey('continue'),
+                      child: _ContinueCard(
+                        song: recent.first,
+                        onTap: () => _open(recent.first),
+                        onLongPress: repo.isImported(recent.first.id)
+                            ? () => removeImportedSongFlow(context, recent.first.id)
+                            : null,
+                      ),
+                    ),
                   if (mine.isNotEmpty)
                     _section(context, t, t.mySongs, mine, autofocus: true, removable: true, addCard: true),
                   if (recent.isNotEmpty) _section(context, t, t.recentlyPlayed, recent, removable: true),
@@ -114,40 +125,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _header(BuildContext context, Strings t) {
-    Widget action(IconData icon, String label, VoidCallback onPressed) => Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: FilledButton.tonalIcon(onPressed: onPressed, icon: Icon(icon), label: Text(label)),
-        );
     void push(Widget Function() page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page()));
+    final actions = [
+      _Action(Icons.grid_view_rounded, t.chords, () => push(() => const ChordsScreen())),
+      _Action(Icons.touch_app_rounded, t.freePlay, () => push(() => const FreePlayScreen())),
+      _Action(Icons.file_open_rounded, t.addSongs, () => addSongsFlow(context)),
+      _Action(Icons.settings_rounded, t.settings, () => push(() => const SettingsScreen())),
+    ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        runSpacing: 8,
-        children: [
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.music_note_rounded, size: 36, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(t.appTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
-          ]),
-          Wrap(runSpacing: 8, children: [
-            action(Icons.file_open_rounded, t.addSongs, () => addSongsFlow(context)),
-            action(Icons.grid_view_rounded, t.chords, () => push(() => const ChordsScreen())),
-            action(Icons.touch_app_rounded, t.freePlay, () => push(() => const FreePlayScreen())),
-            action(Icons.settings_rounded, t.settings, () => push(() => const SettingsScreen())),
-          ]),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.music_note_rounded, size: 36, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 8),
+          Text(t.appTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+        ]),
+        const SizedBox(height: 12),
+        // The four places to go, as big cards: easy to hit with a finger and
+        // easy to see with a remote. Side by side on a TV or tablet, two by
+        // two on a phone.
+        LayoutBuilder(builder: (context, box) {
+          final wide = box.maxWidth >= 720;
+          final width = wide ? (box.maxWidth - 12 * 3) / 4 : (box.maxWidth - 12) / 2;
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [for (final a in actions) _ActionCard(action: a, width: width)],
+          );
+        }),
+      ]),
     );
   }
 
   Widget _searchBar(BuildContext context, Strings t) {
+    // Each level is colored like its song cards, so the filter and the
+    // cards speak the same language.
     Widget chip(String label, Difficulty? d) => Padding(
           padding: const EdgeInsets.only(right: 8),
           child: ChoiceChip(
-            label: Text(label, style: const TextStyle(fontSize: 16)),
+            label: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             selected: _difficulty == d,
+            selectedColor: d == null ? null : _difficultyColors[d]!.first,
             onSelected: (_) => setState(() => _difficulty = d),
           ),
         );
@@ -158,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
         runSpacing: 8,
         children: [
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
+            constraints: const BoxConstraints(maxWidth: 380),
             child: _SearchBox(controller: _query, hint: t.searchHint),
           ),
           const SizedBox(width: 16),
@@ -522,6 +540,99 @@ class _ComingSoonCard extends StatelessWidget {
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 18, color: Colors.white70)),
       ]),
+    );
+  }
+}
+
+class _Action {
+  const _Action(this.icon, this.label, this.onTap);
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+/// One of the big cards under the title: an icon and a word.
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({required this.action, required this.width});
+
+  final _Action action;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return FocusCard(
+      width: width,
+      height: 64,
+      onTap: action.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Row(children: [
+          Icon(action.icon, size: 30, color: scheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              action.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// The wide card at the top: one press and the last song plays again.
+class _ContinueCard extends StatelessWidget {
+  const _ContinueCard({required this.song, required this.onTap, this.onLongPress});
+
+  final SongInfo song;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Strings.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final colors = _difficultyColors[song.difficulty]!;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: FocusCard(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        color: colors.last,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors, begin: Alignment.centerLeft, end: Alignment.centerRight),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+            child: Row(children: [
+              Icon(Icons.play_circle_fill_rounded, size: 52, color: Colors.white),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                  Text(t.continueSong, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white70)),
+                  const SizedBox(height: 2),
+                  Text(
+                    t.songTitle(song),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+                  ),
+                  if (song.artist.isNotEmpty)
+                    Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+                ]),
+              ),
+              const SizedBox(width: 12),
+              Text(t.difficulty(song.difficulty.name), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: scheme.onPrimary.withValues(alpha: 0.9))),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }

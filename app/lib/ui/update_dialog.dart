@@ -124,37 +124,49 @@ class _UpdateBannerState extends State<UpdateBanner> {
     final t = Strings.of(context);
     final scheme = Theme.of(context).colorScheme;
     final update = widget.update;
+    // The whole card is one big button for the remote (it spans the width,
+    // so Up from the search box always finds it); the Update button inside
+    // is for a finger. "Later" sits beside it as a second stop.
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-      child: Material(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-          child: Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            runSpacing: 8,
-            children: [
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.system_update_rounded, color: scheme.onPrimaryContainer),
-                const SizedBox(width: 12),
-                Text(t.updateAvailable(update.build),
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer)),
-              ]),
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                FilledButton(
-                  focusNode: _updateButton,
-                  onPressed: () => showUpdateDialog(context, update),
-                  child: Text(t.updateNow),
+      child: Row(children: [
+        Expanded(
+          child: Material(
+            color: scheme.primaryContainer,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              focusNode: _updateButton,
+              onTap: () => showUpdateDialog(context, update),
+              focusColor: Colors.white.withValues(alpha: 0.22),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: 8,
+                  children: [
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.system_update_rounded, color: scheme.onPrimaryContainer),
+                      const SizedBox(width: 12),
+                      Text(t.updateAvailable(update.build),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer)),
+                    ]),
+                    ExcludeFocus(
+                      child: FilledButton(
+                        onPressed: () => showUpdateDialog(context, update),
+                        child: Text(t.updateNow),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                TextButton(onPressed: widget.onDismiss, child: Text(t.later)),
-              ]),
-            ],
+              ),
+            ),
           ),
         ),
-      ),
+        const SizedBox(width: 4),
+        TextButton(onPressed: widget.onDismiss, child: Text(t.later)),
+      ]),
     );
   }
 }

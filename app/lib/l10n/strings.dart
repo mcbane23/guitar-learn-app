@@ -106,6 +106,8 @@ class Strings {
   String get secondPart => _t('secondPart');
   String get none => _t('none');
   String get forward1Bar => _t('forward1Bar');
+  String barOf(int n, int total) => _t('barOf', {'n': '$n', 'total': '$total'});
+  String get remoteHint => _t('remoteHint');
   String get showChordName => _t('showChordName');
   String get colors => _t('colors');
   String get colorsBright => _t('colorsBright');
@@ -178,6 +180,7 @@ class Strings {
   String get tuning => _t('tuning');
   String capo(int n) => _t('capo', {'n': '$n'});
   String get recentlyPlayed => _t('recentlyPlayed');
+  String get continueSong => _t('continueSong');
   String get fromFile => _t('fromFile');
   String get songFiles => _t('songFiles');
   String get songFilesHint => _t('songFilesHint');
@@ -299,6 +302,8 @@ class Strings {
     'secondPart': 'Second instrument underneath',
     'none': 'None',
     'forward1Bar': 'Bar forward',
+    'barOf': 'Bar {n} / {total}',
+    'remoteHint': 'OK: play or pause  \u00b7  \u25c0 \u25b6: choose a button  \u00b7  \u23ea \u23e9: a bar back or forward',
     'showChordName': 'Show chord name',
     'colors': 'Colors',
     'colorsBright': 'Bright',
@@ -375,6 +380,7 @@ class Strings {
     'tuning': 'Tuning',
     'capo': 'Capo {n}',
     'recentlyPlayed': 'Recently played',
+    'continueSong': 'Continue',
     'receiveSongs': 'Send songs from a phone',
     'receiveSongsHint': 'Shows a QR code. The phone sends song files from its browser or from the Guitar Learn app.',
     'sendToTv': 'Send to a TV',
@@ -478,6 +484,8 @@ class Strings {
     'secondPart': 'Drugi instrument ispod',
     'none': 'Nijedan',
     'forward1Bar': 'Takt napred',
+    'barOf': 'Takt {n} / {total}',
+    'remoteHint': 'OK: sviraj ili pauza  \u00b7  \u25c0 \u25b6: biraj dugme  \u00b7  \u23ea \u23e9: takt nazad ili napred',
     'showChordName': 'Prikaži ime akorda',
     'colors': 'Boje',
     'colorsBright': 'Vesele',
@@ -554,6 +562,7 @@ class Strings {
     'tuning': 'Štim',
     'capo': 'Kapodaster {n}',
     'recentlyPlayed': 'Nedavno svirano',
+    'continueSong': 'Nastavi',
     'receiveSongs': 'Pošalji pesme sa telefona',
     'receiveSongsHint': 'Pokazuje QR kod. Telefon šalje fajlove sa pesmama iz pretraživača ili iz aplikacije Guitar Learn.',
     'sendToTv': 'Pošalji na TV',

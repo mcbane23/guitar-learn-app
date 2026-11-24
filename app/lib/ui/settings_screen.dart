@@ -8,6 +8,7 @@ import '../update/app_update.dart';
 import 'add_songs.dart';
 import 'receive_songs_screen.dart';
 import 'send_songs_screen.dart';
+import 'common.dart';
 import 'themes.dart';
 import 'update_dialog.dart';
 
@@ -53,33 +54,34 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
+          // The choices with a few options sit side by side as cards, so
+          // the list is short and a remote reaches everything in a few presses.
           header(t.language_),
-          for (final (i, (lang, label)) in languages.indexed)
-            ListTile(
-              autofocus: i == 0,
-              title: Text(label, style: const TextStyle(fontSize: 18)),
-              leading: Icon(s.language == lang ? Icons.radio_button_checked : Icons.radio_button_off),
-              onTap: () => s.update((x) => x.language = lang),
-            ),
+          _ChoiceRow(
+            autofocus: true,
+            options: [
+              for (final (lang, label) in languages)
+                _Choice(label: label, selected: s.language == lang, onTap: () => s.update((x) => x.language = lang)),
+            ],
+          ),
           header(t.theme),
-          for (final theme in AppColorTheme.values)
-            ListTile(
-              title: Text(t.themeName(theme.name), style: const TextStyle(fontSize: 18)),
-              leading: Icon(s.colorTheme == theme ? Icons.radio_button_checked : Icons.radio_button_off),
-              trailing: _ThemeSwatch(theme),
-              onTap: () => s.update((x) => x.colorTheme = theme),
-            ),
+          _ChoiceRow(options: [
+            for (final theme in AppColorTheme.values)
+              _Choice(
+                label: t.themeName(theme.name),
+                leading: _ThemeSwatch(theme),
+                selected: s.colorTheme == theme,
+                onTap: () => s.update((x) => x.colorTheme = theme),
+              ),
+          ]),
           header(t.dotLabel),
-          for (final (label, hint, value) in [
-            (t.dotLabelFinger, t.dotLabelFingerHint, DotLabel.finger),
-            (t.dotLabelFret, t.dotLabelFretHint, DotLabel.fret),
-          ])
-            ListTile(
-              title: Text(label, style: const TextStyle(fontSize: 18)),
-              subtitle: Text(hint),
-              leading: Icon(s.dotLabel == value ? Icons.radio_button_checked : Icons.radio_button_off),
-              onTap: () => s.update((x) => x.dotLabel = value),
-            ),
+          _ChoiceRow(options: [
+            for (final (label, hint, value) in [
+              (t.dotLabelFinger, t.dotLabelFingerHint, DotLabel.finger),
+              (t.dotLabelFret, t.dotLabelFretHint, DotLabel.fret),
+            ])
+              _Choice(label: label, hint: hint, selected: s.dotLabel == value, onTap: () => s.update((x) => x.dotLabel = value)),
+          ]),
           header(t.settings),
           toggle(t.leftHanded, t.leftHandedHint, s.leftHanded, (x, v) => x.leftHanded = v),
           toggle(t.thinStringTop, t.thinStringTopHint, s.thinStringOnTop, (x, v) => x.thinStringOnTop = v),
@@ -335,6 +337,67 @@ class _AddSourceDialogState extends State<_AddSourceDialog> {
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
         FilledButton(onPressed: _checking ? null : _add, child: Text(_checking ? t.checking : t.add)),
       ],
+    );
+  }
+}
+
+class _Choice {
+  const _Choice({required this.label, required this.selected, required this.onTap, this.hint, this.leading});
+
+  final String label;
+  final String? hint;
+  final Widget? leading;
+  final bool selected;
+  final VoidCallback onTap;
+}
+
+/// A few options side by side; the chosen one is filled with the accent
+/// color. They wrap onto more rows on a narrow phone.
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({required this.options, this.autofocus = false});
+
+  final List<_Choice> options;
+
+  /// The first option takes the remote's focus when the screen opens.
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          for (final (i, o) in options.indexed)
+            FocusCard(
+              autofocus: autofocus && i == 0,
+              onTap: o.onTap,
+              color: o.selected ? scheme.primary : null,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 16, 10),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (o.leading case final leading?) ...[leading, const SizedBox(width: 10)],
+                  Icon(
+                    o.selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                    size: 22,
+                    color: o.selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text(
+                      o.label,
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: o.selected ? scheme.onPrimary : null),
+                    ),
+                    if (o.hint case final hint?)
+                      Text(hint, style: TextStyle(fontSize: 13, color: o.selected ? scheme.onPrimary.withValues(alpha: 0.85) : scheme.onSurfaceVariant)),
+                  ]),
+                ]),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

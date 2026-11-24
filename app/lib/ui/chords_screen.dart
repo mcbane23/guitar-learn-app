@@ -134,37 +134,144 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                   Text(shape.name, style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.primary)),
               ]),
             ),
-            SizedBox(
-              height: 64,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: [
-                  for (final (i, n) in chords.names.indexed)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                      child: FocusCard(
-                        width: 72,
-                        autofocus: i == 0,
-                        color: n == _selected ? Theme.of(context).colorScheme.primary : null,
-                        onTap: () => _pick(chords[n]!),
-                        child: Center(
-                          child: Text(n,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: n == _selected ? Theme.of(context).colorScheme.onPrimary : null,
-                              )),
-                        ),
+            // All chords as cards with a small diagram each. On a TV or a
+            // tablet they sit in two rows, so up and down on the remote
+            // move between them too; on a phone one row scrolls sideways.
+            LayoutBuilder(builder: (context, box) {
+              final rows = box.maxWidth >= 720 ? 2 : 1;
+              const card = 104.0;
+              return SizedBox(
+                height: rows * card + (rows - 1) * 8 + 8,
+                child: GridView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: rows,
+                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8,
+                    childAspectRatio: card / (card + 16),
+                  ),
+                  itemCount: chords.names.length,
+                  itemBuilder: (context, i) {
+                    final n = chords.names[i];
+                    final selected = n == _selected;
+                    final scheme = Theme.of(context).colorScheme;
+                    return FocusCard(
+                      autofocus: i == 0,
+                      color: selected ? scheme.primary : null,
+                      onTap: () => _pick(chords[n]!),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(6, 6, 6, 4),
+                        child: Column(children: [
+                          Text(
+                            n,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: selected ? scheme.onPrimary : null,
+                            ),
+                          ),
+                          Expanded(
+                            child: ChordDiagram(
+                              shape: chords[n]!,
+                              leftHanded: settings.leftHanded,
+                              color: selected ? scheme.onPrimary : Colors.white,
+                            ),
+                          ),
+                        ]),
                       ),
-                    ),
-                ],
-              ),
-            ),
+                    );
+                  },
+                ),
+              );
+            }),
             Expanded(child: FretboardView(scene: scene, style: style)),
           ],
         ),
       ),
     );
   }
+}
+
+/// A small chord box like in a songbook: strings as vertical lines, the
+/// first few frets as horizontal ones, a dot for each finger, and an x or o
+/// above a string that is muted or open. Drawn from the thick string on the
+/// left (the other way round for a left-handed player).
+class ChordDiagram extends StatelessWidget {
+  const ChordDiagram({super.key, required this.shape, this.leftHanded = false, this.color = Colors.white});
+
+  final ChordShape shape;
+  final bool leftHanded;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: _ChordDiagramPainter(shape, leftHanded, color));
+  }
+}
+
+class _ChordDiagramPainter extends CustomPainter {
+  _ChordDiagramPainter(this.shape, this.leftHanded, this.color);
+
+  final ChordShape shape;
+  final bool leftHanded;
+  final Color color;
+
+  static const _frets = 4;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final played = [for (var s = 1; s <= 6; s++) if (shape.fretOn(s) > 0) shape.fretOn(s)];
+    final highest = played.isEmpty ? 1 : played.reduce((a, b) => a > b ? a : b);
+    // The box starts at the first fret unless the chord sits higher up.
+    final base = highest <= _frets ? 1 : played.reduce((a, b) => a < b ? a : b);
+    final top = size.height * 0.2;
+    final left = size.width * 0.14;
+    final right = size.width * 0.86;
+    final bottom = size.height * 0.96;
+    final stringGap = (right - left) / 5;
+    final fretGap = (bottom - top) / _frets;
+    final line = Paint()
+      ..color = color.withValues(alpha: 0.8)
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    final fill = Paint()..color = color;
+
+    double x(int string) {
+      // String 6 (thick) on the left; the thin one on the right.
+      final i = leftHanded ? string - 1 : 6 - string;
+      return left + i * stringGap;
+    }
+
+    for (var s = 1; s <= 6; s++) {
+      canvas.drawLine(Offset(x(s), top), Offset(x(s), bottom), line);
+    }
+    for (var f = 0; f <= _frets; f++) {
+      final y = top + f * fretGap;
+      canvas.drawLine(Offset(left, y), Offset(right, y), f == 0 && base == 1 ? (Paint()..color = color..strokeWidth = 3) : line);
+    }
+    final dotRadius = stringGap * 0.34;
+    final textStyle = TextStyle(color: color, fontSize: size.height * 0.16, fontWeight: FontWeight.w700);
+    for (var s = 1; s <= 6; s++) {
+      final fret = shape.fretOn(s);
+      if (fret > 0) {
+        canvas.drawCircle(Offset(x(s), top + (fret - base + 0.5) * fretGap), dotRadius, fill);
+      } else {
+        _text(canvas, fret == 0 ? 'o' : 'x', Offset(x(s), top * 0.45), textStyle);
+      }
+    }
+    if (base > 1) {
+      _text(canvas, '$base', Offset(left - size.width * 0.08, top + fretGap * 0.5), textStyle.copyWith(fontSize: size.height * 0.14));
+    }
+  }
+
+  void _text(Canvas canvas, String text, Offset center, TextStyle style) {
+    final tp = TextPainter(text: TextSpan(text: text, style: style), textDirection: TextDirection.ltr)..layout();
+    tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
+  }
+
+  @override
+  bool shouldRepaint(_ChordDiagramPainter old) => old.shape != shape || old.leftHanded != leftHanded || old.color != color;
 }
