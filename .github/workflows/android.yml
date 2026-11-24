@@ -55,28 +55,50 @@ jobs:
       # with the same key as before (app/android/app/keystore/debug.keystore),
       # so it installs as an update over the earlier builds and the in-app
       # updater keeps working.
-      - name: Build release APK
-        run: flutter build apk --release --build-number=${{ github.run_number }}
+      #
+      # Only the two ARM CPU types are built (no x86), the Dart code is
+      # obfuscated and its debug symbols are kept out of the APK (they land in
+      # build/symbols). Gradle (android/app/build.gradle.kts) turns the build
+      # into three APKs: one per CPU type and a universal one with both.
+      - name: Build release APKs
+        run: >
+          flutter build apk --release --build-number=${{ github.run_number }}
+          --target-platform android-arm,android-arm64
+          --obfuscate --split-debug-info=build/symbols
+      - name: APK sizes
+        run: ls -l build/app/outputs/flutter-apk/*.apk
 
-      # The APK always has the same name, so the link
+      # The APKs always have the same names, so the link
       # https://github.com/mcbane23/guitar-learn-app/releases/latest/download/guitar-learn.apk
-      # points at the newest build and the app can download updates from it.
-      # version.json next to it tells the app which build is the newest.
-      - name: Name the APK and write version.json
+      # points at the newest build (the universal APK, which installs on every
+      # device) and the app can download updates from it. version.json next to
+      # it tells the app which build is the newest and, under "apks", the
+      # smaller APK for each CPU type, which the updater prefers when it knows
+      # the device's CPU type. Older builds only know "apk" and keep working.
+      - name: Name the APKs and write version.json
         id: apk
         working-directory: .
         run: |
           mkdir -p dist
-          mv app/build/app/outputs/flutter-apk/app-release.apk dist/guitar-learn.apk
+          out=app/build/app/outputs/flutter-apk
+          mv "$out/app-release.apk" dist/guitar-learn.apk
+          mv "$out/app-arm64-v8a-release.apk" dist/guitar-learn-arm64-v8a.apk
+          mv "$out/app-armeabi-v7a-release.apk" dist/guitar-learn-armeabi-v7a.apk
+          base="https://github.com/${{ github.repository }}/releases/latest/download"
           cat > dist/version.json <<EOF
           {
             "build": ${{ github.run_number }},
             "tag": "build-${{ github.run_number }}",
             "commit": "${{ github.sha }}",
-            "apk": "https://github.com/${{ github.repository }}/releases/latest/download/guitar-learn.apk"
+            "apk": "$base/guitar-learn.apk",
+            "apks": {
+              "arm64-v8a": "$base/guitar-learn-arm64-v8a.apk",
+              "armeabi-v7a": "$base/guitar-learn-armeabi-v7a.apk"
+            }
           }
           EOF
           cat dist/version.json
+          ls -l dist
 
       # Pull request builds only check that the app builds and the tests pass;
       # they publish nothing. A push to main (a merged pull request) publishes
@@ -89,8 +111,8 @@ jobs:
         run: |
           tag="build-${{ github.run_number }}"
           short_sha="$(git rev-parse --short HEAD)"
-          gh release create "$tag" dist/guitar-learn.apk dist/version.json \
+          gh release create "$tag" dist/guitar-learn.apk dist/guitar-learn-arm64-v8a.apk dist/guitar-learn-armeabi-v7a.apk dist/version.json \
             --target "${{ github.sha }}" \
             --title "Build ${{ github.run_number }} ($short_sha)" \
-            --notes "APK built from ${{ github.sha }}. Download guitar-learn.apk below on an Android phone, tablet or TV and open it to install (allow installing from unknown sources when asked). The app can also update itself from Settings. Fixed link to the newest build: https://github.com/${{ github.repository }}/releases/latest/download/guitar-learn.apk" \
+            --notes "APK built from ${{ github.sha }}. Download guitar-learn.apk below on an Android phone, tablet or TV and open it to install (allow installing from unknown sources when asked). It installs on every device; guitar-learn-arm64-v8a.apk (most phones and tablets) and guitar-learn-armeabi-v7a.apk (32-bit TVs) are smaller downloads for one CPU type. The app can also update itself from Settings. Fixed link to the newest build: https://github.com/${{ github.repository }}/releases/latest/download/guitar-learn.apk" \
             --latest

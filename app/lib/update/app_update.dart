@@ -9,7 +9,8 @@ import 'package:path_provider/path_provider.dart';
 /// Where the newest build is published. Every push to main releases the APK
 /// under the same name, so this link always points at the newest build:
 /// https://github.com/mcbane23/guitar-learn-app/releases/latest/download/guitar-learn.apk
-/// version.json next to it holds the build number of that APK.
+/// version.json next to it holds the build number of that APK and, under
+/// "apks", the smaller APK for each CPU type (arm64-v8a, armeabi-v7a).
 const defaultUpdateUrl = String.fromEnvironment(
   'UPDATE_URL',
   defaultValue: 'https://github.com/mcbane23/guitar-learn-app/releases/latest/download/',
@@ -79,6 +80,34 @@ class GitHubAppUpdater implements AppUpdater {
     return _build!;
   }
 
+  /// The CPU types this device runs, best first (Android's
+  /// Build.SUPPORTED_ABIS), or empty when unknown.
+  Future<List<String>> deviceAbis() async {
+    try {
+      final abis = await _channel.invokeMethod<List<Object?>>('abis');
+      return abis?.whereType<String>().toList() ?? const [];
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
+
+  /// The APK to download from a version.json: the small one built for the
+  /// device's CPU type when the release has one under "apks", otherwise the
+  /// universal "apk" that installs on every device.
+  @visibleForTesting
+  static String chooseApk(Map json, List<String> abis, String baseUrl) {
+    final apks = json['apks'];
+    if (apks is Map) {
+      for (final abi in abis) {
+        final url = apks[abi];
+        if (url is String && url.isNotEmpty) return url;
+      }
+    }
+    return json['apk'] as String? ?? '${baseUrl}guitar-learn.apk';
+  }
+
   @override
   Future<AppUpdate?> check() async {
     final current = await currentBuild();
@@ -90,8 +119,7 @@ class GitHubAppUpdater implements AppUpdater {
       if (json is! Map) return null;
       final build = (json['build'] as num?)?.toInt() ?? 0;
       if (build <= current) return null;
-      final apk = json['apk'] as String? ?? '${baseUrl}guitar-learn.apk';
-      return AppUpdate(build: build, apkUrl: apk);
+      return AppUpdate(build: build, apkUrl: chooseApk(json, await deviceAbis(), baseUrl));
     } catch (e) {
       if (kDebugMode) debugPrint('update check: $e');
       return null;

@@ -10,7 +10,7 @@ See [docs/PLAN.md](docs/PLAN.md) for the full plan, feature list and milestones.
 
 ## Download a test build
 
-Every push to `main` builds a release APK and publishes it on the [Releases page](../../releases/latest). On the phone, tablet or TV, download the `.apk` file and open it; allow "install from unknown sources" when Android asks. A new build installs as an update over the previous one: the app id is `com.bane23.guitar.learn` and every build (debug and release) is signed with the same debug key (`app/android/app/keystore/debug.keystore`). Builds made before that change used a different id and key, so uninstall that old copy once. The debug key is for testing only; a Play Store release needs its own private key.
+Every push to `main` builds a release APK and publishes it on the [Releases page](../../releases/latest). On the phone, tablet or TV, download the `.apk` file and open it; allow "install from unknown sources" when Android asks. `guitar-learn.apk` installs on every device; `guitar-learn-arm64-v8a.apk` (most phones and tablets) and `guitar-learn-armeabi-v7a.apk` (32-bit TVs) are about half the size and hold only one CPU type. The in-app updater downloads the small one for the device. A new build installs as an update over the previous one: the app id is `com.bane23.guitar.learn` and every build (debug and release) is signed with the same debug key (`app/android/app/keystore/debug.keystore`). Builds made before that change used a different id and key, so uninstall that old copy once. The debug key is for testing only; a Play Store release needs its own private key.
 
 ## Project layout
 

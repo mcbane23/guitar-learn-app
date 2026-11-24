@@ -16,6 +16,9 @@ class AppUpdate(private val context: Context, messenger: BinaryMessenger) {
         MethodChannel(messenger, "guitar_learn/update").setMethodCallHandler { call, result ->
             when (call.method) {
                 "versionCode" -> result.success(versionCode())
+                // The CPU types this device runs, best first, so Flutter can
+                // download the small APK built for it instead of the universal one.
+                "abis" -> result.success(Build.SUPPORTED_ABIS.toList())
                 "install" -> {
                     val path = call.argument<String>("path")
                     if (path == null) {
