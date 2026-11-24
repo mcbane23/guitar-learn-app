@@ -29,6 +29,10 @@ class _PlayerScreenState extends State<PlayerScreen>
   PlaybackController? _controller;
   Object? _error;
 
+  /// On a TV a line under the neck says which keys do what, until the song
+  /// is started for the first time.
+  bool _tv = false;
+
   /// Drives the neck animation (glowing strings, pulsing dots). It runs while
   /// the song plays or something still moves, and stops a moment after the
   /// song is paused, so a song left open does not keep the device busy.
@@ -41,6 +45,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    isTelevision().then((tv) {
+      if (mounted && tv) setState(() => _tv = true);
+    });
     _ticker = createTicker((_) {
       _time.value = _clock.elapsedMicroseconds / 1e6;
       final c = _controller;
@@ -157,7 +164,7 @@ class _PlayerScreenState extends State<PlayerScreen>
           child: Column(
             children: [
               _TopBar(controller: c, onPart: _selectPart),
-              Expanded(child: _Neck(controller: c, time: _time)),
+              Expanded(child: _Neck(controller: c, time: _time, remoteHint: _tv)),
               _Progress(controller: c),
               _Controls(controller: c),
             ],
@@ -254,15 +261,22 @@ class _TopBar extends StatelessWidget {
                     ),
                   ),
                 if (song.parts.length > 1) const SizedBox(width: 8),
-                if (settings.showChordName && chord != null)
+                // The chord badge keeps its place and size while the song
+                // plays, so the eye always finds the chord in the same spot.
+                if (settings.showChordName && song.hasEasy)
                   Container(
+                    constraints: const BoxConstraints(minWidth: 72),
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                     margin: const EdgeInsets.symmetric(horizontal: 12),
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: scheme.primary,
+                      color: chord == null ? scheme.surfaceContainerHigh : scheme.primary,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(chord, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: scheme.onPrimary)),
+                    child: Text(
+                      chord ?? '\u2013',
+                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: chord == null ? scheme.onSurfaceVariant : scheme.onPrimary),
+                    ),
                   ),
                 _BeatDots(controller: controller),
                 const SizedBox(width: 12),
@@ -378,10 +392,13 @@ class _BeatDots extends StatelessWidget {
 /// The neck (or two necks, when a second part is shown underneath) with the
 /// count-in and the "well done" card on top.
 class _Neck extends StatelessWidget {
-  const _Neck({required this.controller, required this.time});
+  const _Neck({required this.controller, required this.time, this.remoteHint = false});
 
   final PlaybackController controller;
   final ValueNotifier<double> time;
+
+  /// Show the line about the remote's keys while the song waits at the start.
+  final bool remoteHint;
 
   NeckStyle _style(AppSettings settings, Song song) => NeckStyle(
         leftHanded: settings.leftHanded,
@@ -446,6 +463,24 @@ class _Neck extends StatelessWidget {
                   ),
                 ),
               ]),
+            if (remoteHint && !controller.isPlaying && controller.countdown == null && !controller.finished && controller.position <= 0)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 30,
+                child: IgnorePointer(
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(t.remoteHint, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+                    ),
+                  ),
+                ),
+              ),
             if (controller.countdown != null)
               IgnorePointer(
                 child: FittedBox(
@@ -520,6 +555,12 @@ class _Named extends StatelessWidget {
   }
 }
 
+/// Seconds as m:ss.
+String _clock(double seconds) {
+  final s = seconds.round();
+  return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+}
+
 class _Progress extends StatelessWidget {
   const _Progress({required this.controller});
 
@@ -527,46 +568,75 @@ class _Progress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Strings.of(context);
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
         final total = controller.totalBeats <= 0 ? 1.0 : controller.totalBeats;
         final loop = controller.loop;
-        return SizedBox(
-          height: 28,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (loop != null)
-                Positioned.fill(
-                  child: LayoutBuilder(builder: (context, box) {
-                    const pad = 24.0;
-                    final w = box.maxWidth - pad * 2;
-                    return Stack(children: [
-                      Positioned(
-                        left: pad + w * loop.start / total,
-                        width: w * (loop.end - loop.start) / total,
-                        top: 6,
-                        bottom: 6,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.33),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
+        final song = controller.song;
+        final bpb = song.beatsPerBar;
+        final position = controller.position.clamp(0.0, total);
+        // Where you are: the bar on the left, the time on the right. The
+        // time is at the chosen speed, so it matches the clock on the wall.
+        final bar = (position / bpb).floor() + 1;
+        final bars = (total / bpb).ceil();
+        final secondsPerBeat = 60 / (song.tempo * controller.speed);
+        final labelStyle = TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        );
+        final slider = Stack(
+          alignment: Alignment.center,
+          children: [
+            if (loop != null)
+              Positioned.fill(
+                child: LayoutBuilder(builder: (context, box) {
+                  const pad = 24.0;
+                  final w = box.maxWidth - pad * 2;
+                  return Stack(children: [
+                    Positioned(
+                      left: pad + w * loop.start / total,
+                      width: w * (loop.end - loop.start) / total,
+                      top: 6,
+                      bottom: 6,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.33),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-                    ]);
-                  }),
-                ),
-              ExcludeFocus(
-                child: Slider(
-                  value: controller.position.clamp(0, total),
-                  max: total,
-                  onChanged: controller.seek,
-                ),
+                    ),
+                  ]);
+                }),
               ),
-            ],
-          ),
+            ExcludeFocus(
+              child: Slider(
+                value: position,
+                max: total,
+                onChanged: controller.seek,
+              ),
+            ),
+          ],
+        );
+        return SizedBox(
+          height: 28,
+          child: Row(children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: Text(t.barOf(bar.clamp(1, bars), bars), style: labelStyle),
+            ),
+            Expanded(child: slider),
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: Text(
+                '${_clock(position * secondsPerBeat)} / ${_clock(total * secondsPerBeat)}',
+                style: labelStyle,
+              ),
+            ),
+          ]),
         );
       },
     );
@@ -609,8 +679,9 @@ class _Controls extends StatelessWidget {
           final percent = (c.speed * 100).round();
           Widget toggle(IconData icon, String label, bool selected, VoidCallback? onPressed) =>
               LabeledToggle(icon: icon, label: label, selected: selected, onPressed: onPressed, showLabel: !compact);
+          final gap = SizedBox(width: compact ? 6 : 10);
           return Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, compact ? 4 : 6),
+            padding: EdgeInsets.fromLTRB(12, 2, 12, compact ? 4 : 8),
             child: Row(
               children: [
                 SizedBox(
@@ -622,36 +693,44 @@ class _Controls extends StatelessWidget {
                     label: Text(mainLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
                 ),
-                const SizedBox(width: 8),
-                toggle(Icons.replay_rounded, t.restart, false, c.restart),
-                // One bar back or forward: the only way to move through the
-                // song with a remote, since the progress bar is not focusable.
-                // They stay enabled at both ends, so the remote's focus never
-                // jumps away when the song reaches the start or the end.
-                toggle(Icons.fast_rewind_rounded, t.back1Bar, false, () => c.seekBars(-1)),
-                toggle(Icons.fast_forward_rounded, t.forward1Bar, false, () => c.seekBars(1)),
+                gap,
+                // Moving through the song: the three buttons sit together in
+                // one pill, so they read as one group. One bar back or forward
+                // is the only way to move through the song with a remote,
+                // since the progress bar is not focusable. They stay enabled
+                // at both ends, so the remote's focus never jumps away when
+                // the song reaches the start or the end.
+                ControlGroup(children: [
+                  toggle(Icons.replay_rounded, t.restart, false, c.restart),
+                  toggle(Icons.fast_rewind_rounded, t.back1Bar, false, () => c.seekBars(-1)),
+                  toggle(Icons.fast_forward_rounded, t.forward1Bar, false, () => c.seekBars(1)),
+                ]),
+                gap,
                 toggle(Icons.front_hand_rounded, t.waitMode, c.waitMode, () => c.setWaitMode(!c.waitMode)),
                 const Spacer(),
-                toggle(
-                  Icons.remove_rounded,
-                  t.slower,
-                  false,
-                  c.speed <= PlaybackController.minSpeed + 1e-9 ? null : () => c.setSpeed(c.speed - _speedStep),
-                ),
-                SizedBox(
-                  width: compact ? 60 : 72,
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.speed_rounded, size: 20),
-                    Text('$percent%', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                  ]),
-                ),
-                toggle(
-                  Icons.add_rounded,
-                  t.faster,
-                  false,
-                  c.speed >= 1 - 1e-9 ? null : () => c.setSpeed(c.speed + _speedStep),
-                ),
-                SizedBox(width: compact ? 4 : 12),
+                // The speed: minus, the number, plus, in one pill.
+                ControlGroup(children: [
+                  toggle(
+                    Icons.remove_rounded,
+                    t.slower,
+                    false,
+                    c.speed <= PlaybackController.minSpeed + 1e-9 ? null : () => c.setSpeed(c.speed - _speedStep),
+                  ),
+                  SizedBox(
+                    width: compact ? 56 : 64,
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.speed_rounded, size: 18),
+                      Text('$percent%', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                    ]),
+                  ),
+                  toggle(
+                    Icons.add_rounded,
+                    t.faster,
+                    false,
+                    c.speed >= 1 - 1e-9 ? null : () => c.setSpeed(c.speed + _speedStep),
+                  ),
+                ]),
+                gap,
                 toggle(
                   Icons.tune_rounded,
                   t.more,

@@ -1,6 +1,7 @@
 package com.mcbane23.guitarlearn
 
 import android.content.Intent
+import android.content.Context
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -63,6 +64,10 @@ class MainActivity : FlutterActivity() {
                             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         }
                         result.success(null)
+                    }
+                    "isTv" -> {
+                        val ui = getSystemService(Context.UI_MODE_SERVICE) as android.app.UiModeManager
+                        result.success(ui.currentModeType == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION)
                     }
                     else -> result.notImplemented()
                 }

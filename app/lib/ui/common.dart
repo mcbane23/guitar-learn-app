@@ -17,6 +17,20 @@ void keepScreenOn(bool on) {
   });
 }
 
+bool? _tv;
+
+/// Whether the app runs on a TV (Android TV), where a remote is the only
+/// way to control it. Decided once and cached; false where unknown.
+Future<bool> isTelevision() async {
+  if (_tv case final known?) return known;
+  try {
+    _tv = await _screen.invokeMethod<bool>('isTv') ?? false;
+  } catch (_) {
+    _tv = false;
+  }
+  return _tv!;
+}
+
 /// Keeps a screen in landscape and full screen while it is open
 /// (the neck needs the whole width), and keeps the screen awake.
 mixin LandscapeScreen<T extends StatefulWidget> on State<T> {
@@ -145,6 +159,27 @@ class LabeledToggle extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// A rounded strip behind a few related buttons, so they read as one group.
+class ControlGroup extends StatelessWidget {
+  const ControlGroup({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(mainAxisSize: MainAxisSize.min, children: children),
       ),
     );
   }
