@@ -36,6 +36,8 @@ The guitar sound is synthesized on the device (Karplus-Strong plucked strings, `
 
 Tap **Add songs** on the home screen (or in Settings) and pick one or more files from the device. They are read on the device, kept under **My songs** and work offline. Nothing is uploaded, and the app ships no copyrighted music: users bring their own files.
 
+On an Android TV, which usually has no file chooser, choose **Send songs from a phone** instead. The TV shows a QR code and an address such as `http://192.168.1.5:8765/1234`. A phone on the same Wi-Fi scans the code and uploads song files from its browser (`app/lib/share/upload_page.dart`, served by `song_receiver.dart`), or the Guitar Learn app on the phone finds the TV by itself (**Add songs → Send to a TV**, a UDP broadcast on port 8766) and sends files or the whole **My songs** list. The 4-digit code in the address changes every time the screen opens, and the server runs only while that screen is open.
+
 | Format | Extensions | What is used |
 |---|---|---|
 | Guitar Pro 3, 4, 5 | `.gp3` `.gp4` `.gp5` | strings and frets, tuning, capo, tempo, time signature, repeats, ties, chord names, every guitar track |
