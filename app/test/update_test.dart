@@ -126,4 +126,21 @@ void main() {
     expect(await updater.check(), isNull);
     expect(defaultUpdateUrl, 'https://github.com/mcbane23/guitar-learn-app/releases/latest/download/');
   });
+
+  test('GitHubAppUpdater picks the APK built for the device CPU, else the universal one', () {
+    const base = 'https://x/';
+    final json = {
+      'build': 50,
+      'apk': 'https://x/guitar-learn.apk',
+      'apks': {'arm64-v8a': 'https://x/guitar-learn-arm64-v8a.apk', 'armeabi-v7a': 'https://x/guitar-learn-armeabi-v7a.apk'},
+    };
+    // A 64-bit phone lists arm64-v8a first, a 32-bit TV only armeabi-v7a.
+    expect(GitHubAppUpdater.chooseApk(json, ['arm64-v8a', 'armeabi-v7a'], base), 'https://x/guitar-learn-arm64-v8a.apk');
+    expect(GitHubAppUpdater.chooseApk(json, ['armeabi-v7a'], base), 'https://x/guitar-learn-armeabi-v7a.apk');
+    // Unknown CPU, no CPU list, or an old version.json without "apks": the universal APK.
+    expect(GitHubAppUpdater.chooseApk(json, ['x86_64'], base), 'https://x/guitar-learn.apk');
+    expect(GitHubAppUpdater.chooseApk(json, [], base), 'https://x/guitar-learn.apk');
+    expect(GitHubAppUpdater.chooseApk({'build': 50, 'apk': 'https://x/old.apk'}, ['arm64-v8a'], base), 'https://x/old.apk');
+    expect(GitHubAppUpdater.chooseApk({'build': 50}, ['arm64-v8a'], base), 'https://x/guitar-learn.apk');
+  });
 }
