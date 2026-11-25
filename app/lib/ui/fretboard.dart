@@ -13,17 +13,22 @@ class NeckDot {
     required this.fret,
     required this.finger,
     this.opacity = 1,
-    this.approach = 1,
+    this.scale = 1,
     this.label,
   });
 
   final int string;
   final int fret;
   final int finger;
+
+  /// Below 1 the dot is one that comes next, drawn dim and without a halo.
   final double opacity;
 
-  /// 0 = far in the future, 1 = press now. Upcoming dots show a closing ring.
-  final double approach;
+  /// Size next to a dot to play now (1). Upcoming dots are smaller.
+  final double scale;
+
+  /// The dot to play now, as opposed to one that is coming.
+  bool get now => opacity >= 1;
 
   /// Optional note name shown under the finger number.
   final String? label;
@@ -95,7 +100,7 @@ class NeckScene {
           a.fret != b.fret ||
           a.finger != b.finger ||
           a.opacity != b.opacity ||
-          a.approach != b.approach ||
+          a.scale != b.scale ||
           a.label != b.label) {
         return false;
       }
@@ -240,8 +245,12 @@ class FretboardPainter extends CustomPainter {
     _drawStrings(canvas, g);
     _drawNutMarks(canvas, g);
     _drawStrum(canvas, g);
+    // The notes to play now go on top of the ones that come next.
     for (final d in scene.dots) {
-      _drawDot(canvas, g, d);
+      if (!d.now) _drawDot(canvas, g, d);
+    }
+    for (final d in scene.dots) {
+      if (d.now) _drawDot(canvas, g, d);
     }
     _drawCursor(canvas, g);
     _drawFretNumbers(canvas, g);
@@ -429,19 +438,26 @@ class FretboardPainter extends CustomPainter {
     final r = g.dotRadius(d.fret);
     final color = style.fingerColor(d.finger);
     final o = d.opacity.clamp(0.0, 1.0);
-    if (d.approach < 1) {
-      // Closing ring: the note is coming; it is due when the ring reaches the dot.
+    if (!d.now) {
+      // A note that comes next: a small, dim, flat disc with a thin edge,
+      // so it cannot be taken for the one to play now.
+      final rr = r * d.scale;
+      canvas.drawCircle(c, rr, Paint()..color = const Color(0xFF14101E).withValues(alpha: 0.6 * o));
+      canvas.drawCircle(c, rr, Paint()..color = color.withValues(alpha: 0.7 * o));
       canvas.drawCircle(
         c,
-        r * (1 + 1.3 * (1 - d.approach)),
+        rr,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = r * 0.16
+          ..strokeWidth = rr * 0.1
           ..color = color.withValues(alpha: 0.9 * o),
       );
+      final textColor = style.fingerTextColor(d.finger).withValues(alpha: 0.9 * o);
+      _dotText(canvas, d, c, rr, textColor);
+      return;
     }
     var rr = r;
-    if (scene.pulse && d.approach >= 1) {
+    if (scene.pulse) {
       rr = r * (1 + 0.08 * math.sin(scene.time * 2 * math.pi * 1.5));
       canvas.drawCircle(
         c,
@@ -451,21 +467,26 @@ class FretboardPainter extends CustomPainter {
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.3),
       );
     }
-    // A soft halo in the finger's color, drawn as two rings rather than a
-    // blur, which a TV's chip would feel at 60 frames a second.
-    canvas.drawCircle(c, rr * 1.45, Paint()..color = color.withValues(alpha: 0.16 * o));
-    canvas.drawCircle(c, rr * 1.2, Paint()..color = color.withValues(alpha: 0.22 * o));
-    canvas.drawCircle(c.translate(0, rr * 0.08), rr, Paint()..color = Colors.black.withValues(alpha: 0.3 * o));
-    canvas.drawCircle(c, rr, Paint()..color = color.withValues(alpha: o));
+    // The note to play now: a wide halo in the finger's color and a thick
+    // white edge. The halo is rings rather than a blur, which a TV's chip
+    // would feel at 60 frames a second.
+    canvas.drawCircle(c, rr * 1.7, Paint()..color = color.withValues(alpha: 0.14));
+    canvas.drawCircle(c, rr * 1.45, Paint()..color = color.withValues(alpha: 0.2));
+    canvas.drawCircle(c, rr * 1.2, Paint()..color = color.withValues(alpha: 0.28));
+    canvas.drawCircle(c.translate(0, rr * 0.08), rr, Paint()..color = Colors.black.withValues(alpha: 0.3));
+    canvas.drawCircle(c, rr, Paint()..color = color);
     canvas.drawCircle(
       c,
-      rr,
+      rr * 0.94,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = rr * 0.08
-        ..color = Colors.white.withValues(alpha: 0.7 * o),
+        ..strokeWidth = rr * 0.14
+        ..color = Colors.white,
     );
-    final textColor = style.fingerTextColor(d.finger).withValues(alpha: o);
+    _dotText(canvas, d, c, rr, style.fingerTextColor(d.finger));
+  }
+
+  void _dotText(Canvas canvas, NeckDot d, Offset c, double rr, Color textColor) {
     // The dot keeps its finger color either way; only the number changes.
     final number = style.fretNumbers ? '${d.fret}' : (d.finger > 0 ? '${d.finger}' : '');
     // Two digits (frets 10 and up) need smaller text to stay inside the dot.

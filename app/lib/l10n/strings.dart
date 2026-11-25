@@ -102,6 +102,12 @@ class Strings {
   String get dotLabelFingerHint => _t('dotLabelFingerHint');
   String get dotLabelFret => _t('dotLabelFret');
   String get dotLabelFretHint => _t('dotLabelFretHint');
+  String get notePreview => _t('notePreview');
+  String get notePreviewNone => _t('notePreviewNone');
+  String get notePreviewNext => _t('notePreviewNext');
+  String get notePreviewSeveral => _t('notePreviewSeveral');
+  String get playerSettings => _t('playerSettings');
+  String startAt(int percent) => _t('startAt', {'p': '$percent'});
   String get back1Bar => _t('back1Bar');
   String get secondPart => _t('secondPart');
   String get secondGuitar => _t('secondGuitar');
@@ -305,6 +311,12 @@ class Strings {
     'dotLabelFingerHint': '1 index, 2 middle, 3 ring, 4 pinky',
     'dotLabelFret': 'Fret number',
     'dotLabelFretHint': 'The same number that is written under the neck',
+    'notePreview': 'Notes that come next',
+    'notePreviewNone': 'Hidden',
+    'notePreviewNext': 'The next one',
+    'notePreviewSeveral': 'The next few',
+    'playerSettings': 'Settings',
+    'startAt': 'Always start at {p}%',
     'back1Bar': 'Bar back',
     'secondPart': 'Second instrument underneath',
     'secondGuitar': 'Second guitar',
@@ -497,6 +509,12 @@ class Strings {
     'dotLabelFingerHint': '1 kažiprst, 2 srednji, 3 domali, 4 mali',
     'dotLabelFret': 'Broj praga',
     'dotLabelFretHint': 'Isti broj koji piše ispod vrata gitare',
+    'notePreview': 'Tonovi koji slede',
+    'notePreviewNone': 'Sakriveni',
+    'notePreviewNext': 'Samo sledeći',
+    'notePreviewSeveral': 'Nekoliko sledećih',
+    'playerSettings': 'Podešavanja',
+    'startAt': 'Uvek počni na {p}%',
     'back1Bar': 'Takt nazad',
     'secondPart': 'Drugi instrument ispod',
     'secondGuitar': 'Druga gitara',

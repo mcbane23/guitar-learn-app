@@ -13,6 +13,19 @@ enum DotLabel {
   fret,
 }
 
+/// How many of the notes that come next are shown on the neck, dimmer
+/// and smaller than the one to play now.
+enum NotePreview {
+  /// Only what to play now.
+  none,
+
+  /// The next note or chord as well.
+  next,
+
+  /// Everything due within the next second or so.
+  several,
+}
+
 /// User settings, stored on the device only.
 class AppSettings extends ChangeNotifier {
   AppSettings._(this._prefs);
@@ -37,12 +50,18 @@ class AppSettings extends ChangeNotifier {
   bool leftHanded = false;
   bool thinStringOnTop = true;
   bool showNoteNames = false;
-  DotLabel dotLabel = DotLabel.finger;
+  DotLabel dotLabel = DotLabel.fret;
+  NotePreview notePreview = NotePreview.next;
   bool showChordName = true;
   bool highContrast = false;
   AppColorTheme colorTheme = AppColorTheme.classic;
-  bool countIn = true;
-  double defaultSpeed = 0.75;
+  bool countIn = false;
+  double defaultSpeed = 0.9;
+
+  /// Bumped when a default changes: an app that saved the old defaults
+  /// gets the new ones once (every setting is written on each change, so
+  /// a saved value cannot be told from a choice).
+  static const _defaultsVersion = 2;
   double volume = 0.9;
 
   /// Extra places to download songs from, added by the user (folder URLs).
@@ -68,6 +87,8 @@ class AppSettings extends ChangeNotifier {
     showNoteNames = p.getBool('showNoteNames') ?? showNoteNames;
     final dot = p.getString('dotLabel');
     dotLabel = DotLabel.values.where((d) => d.name == dot).firstOrNull ?? dotLabel;
+    final preview = p.getString('notePreview');
+    notePreview = NotePreview.values.where((d) => d.name == preview).firstOrNull ?? notePreview;
     showChordName = p.getBool('showChordName') ?? showChordName;
     highContrast = p.getBool('highContrast') ?? highContrast;
     final theme = p.getString('colorTheme');
@@ -77,6 +98,13 @@ class AppSettings extends ChangeNotifier {
     volume = p.getDouble('volume') ?? volume;
     songSources = p.getStringList('songSources') ?? songSources;
     recentSongs = p.getStringList('recentSongs') ?? recentSongs;
+    if ((p.getInt('defaultsVersion') ?? 1) < _defaultsVersion) {
+      // Version 2: no count-in, 90 % speed, fret numbers in the circles.
+      countIn = false;
+      defaultSpeed = 0.9;
+      dotLabel = DotLabel.fret;
+      p.setInt('defaultsVersion', _defaultsVersion);
+    }
   }
 
   /// The language to show, resolving "same as phone".
@@ -102,6 +130,8 @@ class AppSettings extends ChangeNotifier {
     p.setBool('thinStringOnTop', thinStringOnTop);
     p.setBool('showNoteNames', showNoteNames);
     p.setString('dotLabel', dotLabel.name);
+    p.setString('notePreview', notePreview.name);
+    p.setInt('defaultsVersion', _defaultsVersion);
     p.setBool('showChordName', showChordName);
     p.setBool('highContrast', highContrast);
     p.setString('colorTheme', colorTheme.name);

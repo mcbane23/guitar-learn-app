@@ -513,6 +513,7 @@ class _Neck extends StatelessWidget {
           time: time.value,
           noteNames: settings.showNoteNames,
           serbianNames: t.language.isSerbian,
+          preview: settings.notePreview,
         );
         final second = controller.secondSong;
         final main = FretboardView(
@@ -539,6 +540,7 @@ class _Neck extends StatelessWidget {
                         time: time.value,
                         noteNames: settings.showNoteNames,
                         serbianNames: t.language.isSerbian,
+                        preview: settings.notePreview,
                         second: true,
                       ),
                       style: _style(settings, second),
@@ -856,17 +858,30 @@ class _Controls extends StatelessWidget {
     });
   }
 
-  /// Sound, click and repeat: useful later, not needed for the first song.
+  /// Sound, click and repeat, and under them the settings that matter
+  /// while playing (the numbers in the circles, the notes that come next,
+  /// the count-in, the starting speed), so nobody has to leave the song
+  /// to change them. They are the same settings as on the settings screen.
   void _showMore(BuildContext context) {
     final t = Strings.of(context);
+    final height = MediaQuery.sizeOf(context).height;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      // Taller than the usual sheet, so a TV shows most of the list at once.
+      isScrollControlled: true,
+      constraints: BoxConstraints(maxWidth: 640, maxHeight: height * 0.85),
       builder: (context) => ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
           final c = controller;
+          final settings = SettingsScope.of(context);
           final scheme = Theme.of(context).colorScheme;
+          final percent = (c.speed * 100).round();
+          Widget heading(String text) => Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Text(text, style: TextStyle(fontSize: 15, color: scheme.primary, fontWeight: FontWeight.w600)),
+              );
           Widget option(IconData icon, String label, bool selected, VoidCallback onTap, {bool autofocus = false}) =>
               ListTile(
                 autofocus: autofocus,
@@ -907,12 +922,47 @@ class _Controls extends StatelessWidget {
                   c.loop != null,
                   c.toggleLoop,
                 ),
+                const Divider(),
+                heading(t.dotLabel),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ChoiceRow(options: [
+                    for (final (label, value) in [(t.dotLabelFinger, DotLabel.finger), (t.dotLabelFret, DotLabel.fret)])
+                      ChoiceOption(
+                        label: label,
+                        selected: settings.dotLabel == value,
+                        onTap: () => settings.update((x) => x.dotLabel = value),
+                      ),
+                  ]),
+                ),
+                heading(t.notePreview),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: ChoiceRow(options: notePreviewOptions(t, settings)),
+                ),
+                option(
+                  Icons.music_note_rounded,
+                  t.showNoteNames,
+                  settings.showNoteNames,
+                  () => settings.update((x) => x.showNoteNames = !x.showNoteNames),
+                ),
+                option(
+                  Icons.hourglass_top_rounded,
+                  t.countIn,
+                  settings.countIn,
+                  () => settings.update((x) => x.countIn = !x.countIn),
+                ),
+                // The speed is set with the buttons under the neck; here it
+                // becomes the speed every song starts at.
+                option(
+                  Icons.speed_rounded,
+                  t.startAt(percent),
+                  (settings.defaultSpeed - c.speed).abs() < 1e-6,
+                  () => settings.update((x) => x.defaultSpeed = c.speed),
+                ),
                 if (c.song.parts.length > 1) ...[
                   const Divider(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                    child: Text(t.secondPart, style: TextStyle(fontSize: 15, color: scheme.primary, fontWeight: FontWeight.w600)),
-                  ),
+                  heading(t.secondPart),
                   // Choosing a part is the end of the visit: the sheet closes
                   // (with a remote, Back would otherwise be one more press).
                   option(Icons.hide_source_rounded, t.none, c.secondPart == null, () {

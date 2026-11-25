@@ -91,7 +91,7 @@ void main() {
   });
 
   testWidgets('a song is played and slowed down with arrows and OK only', (tester) async {
-    final (_, synth) = await start(tester);
+    final (settings, synth) = await start(tester);
     final song = focusedText(tester);
     await press(tester, LogicalKeyboardKey.select);
     await waitFor(tester, find.text('Play'));
@@ -131,9 +131,9 @@ void main() {
     // Slower: to the right along the row, the speed goes down by 5%.
     await press(tester, LogicalKeyboardKey.arrowRight, 3);
     expect(focusedText(tester), 'Slower');
-    expect(find.text('75%'), findsOneWidget);
+    expect(find.text('90%'), findsOneWidget);
     await press(tester, LogicalKeyboardKey.select, 2);
-    expect(find.text('65%'), findsOneWidget);
+    expect(find.text('80%'), findsOneWidget);
 
     // Wait for me: the big button turns into Next and keeps the focus.
     await press(tester, LogicalKeyboardKey.arrowLeft);
@@ -163,6 +163,40 @@ void main() {
     await press(tester, LogicalKeyboardKey.select);
     expect(find.text('Sound off'), findsOneWidget);
     expect(focusedText(tester), contains('Play song'));
+
+    // Further down the sheet are the settings that matter while playing:
+    // the arrows reach them (the sheet scrolls) and OK switches them.
+    expect(settings.dotLabel, DotLabel.fret);
+    for (var i = 0; i < 12 && focusedText(tester) != 'Fret number'; i++) {
+      await press(tester, LogicalKeyboardKey.arrowDown);
+    }
+    expect(focusedText(tester), 'Fret number');
+    await press(tester, LogicalKeyboardKey.arrowLeft);
+    expect(focusedText(tester), 'Finger number');
+    await press(tester, LogicalKeyboardKey.select);
+    expect(settings.dotLabel, DotLabel.finger);
+    await press(tester, LogicalKeyboardKey.arrowDown);
+    expect(focusedText(tester), 'Hidden');
+    // The test font is wide, so the three choices may wrap onto two rows:
+    // right along the row, and down when the row ends.
+    for (var i = 0; i < 4 && focusedText(tester) != 'The next few'; i++) {
+      final before = focusedText(tester);
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      if (focusedText(tester) == before) await press(tester, LogicalKeyboardKey.arrowDown);
+    }
+    expect(focusedText(tester), 'The next few');
+    await press(tester, LogicalKeyboardKey.select);
+    expect(settings.notePreview, NotePreview.several);
+    for (var i = 0; i < 6 && !(focusedText(tester) ?? '').startsWith('Count 3-2-1'); i++) {
+      await press(tester, LogicalKeyboardKey.arrowDown);
+    }
+    expect(focusedText(tester), startsWith('Count 3-2-1'));
+    await press(tester, LogicalKeyboardKey.select);
+    expect(settings.countIn, isTrue);
+    await press(tester, LogicalKeyboardKey.arrowDown);
+    expect(focusedText(tester), 'Always start at 80%');
+    await press(tester, LogicalKeyboardKey.select);
+    expect(settings.defaultSpeed, closeTo(0.8, 1e-9));
   });
 
   testWidgets('back from a song returns the focus to the card that was opened', (tester) async {
@@ -198,16 +232,16 @@ void main() {
     }
     final speed = focusedSlider();
     expect(speed, isNotNull);
-    expect(speed!.value, 0.75);
+    expect(speed!.value, 0.9);
     // Left and right change the value.
     await press(tester, LogicalKeyboardKey.arrowLeft);
-    expect(focusedSlider()!.value, closeTo(0.7, 1e-9));
+    expect(focusedSlider()!.value, closeTo(0.85, 1e-9));
     await press(tester, LogicalKeyboardKey.arrowRight);
-    expect(focusedSlider()!.value, closeTo(0.75, 1e-9));
+    expect(focusedSlider()!.value, closeTo(0.9, 1e-9));
     // Down goes on to the volume, and then past the sliders to the rest.
     await press(tester, LogicalKeyboardKey.arrowDown);
     expect(focusedSlider(), isNotNull);
-    expect(focusedSlider()!.value, isNot(0.75));
+    expect(focusedSlider()!.divisions, 20); // the volume slider
     await press(tester, LogicalKeyboardKey.arrowDown);
     expect(focusedSlider(), isNull);
     for (var i = 0; i < 20 && !(focusedText(tester) ?? '').contains('Check for a new version'); i++) {
@@ -219,7 +253,7 @@ void main() {
       await press(tester, LogicalKeyboardKey.arrowUp);
     }
     await press(tester, LogicalKeyboardKey.arrowUp);
-    expect(focusedSlider()!.value, 0.75);
+    expect(focusedSlider()!.value, 0.9);
   });
 
   testWidgets('right from the last card of a row stays put instead of jumping to another row', (tester) async {
