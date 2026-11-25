@@ -113,6 +113,9 @@ class Strings {
   String get colorsBright => _t('colorsBright');
   String get colorsHighContrast => _t('colorsHighContrast');
   String get theme => _t('theme');
+  String get lookSection => _t('lookSection');
+  String get playingSection => _t('playingSection');
+  String get previewHint => _t('previewHint');
   String themeName(String name) => _t('theme_$name');
   String get defaultSpeed => _t('defaultSpeed');
   String get volume => _t('volume');
@@ -149,6 +152,9 @@ class Strings {
   String currentBuild(int build) => _t('currentBuild', {'n': '$build'});
   String get tapChord => _t('tapChord');
   String get fingers => _t('fingers');
+  String fingerName(int finger) => _t('finger$finger');
+  String get openStringLegend => _t('openStringLegend');
+  String get mutedStringLegend => _t('mutedStringLegend');
   String get fretNumbersLegend => _t('fretNumbersLegend');
   String get songNotFound => _t('songNotFound');
   String get back => _t('back');
@@ -309,6 +315,9 @@ class Strings {
     'colorsBright': 'Bright',
     'colorsHighContrast': 'High contrast',
     'theme': 'Theme',
+    'lookSection': 'Look',
+    'playingSection': 'Playing',
+    'previewHint': 'This is how the neck will look',
     'theme_classic': 'Classic',
     'theme_frost': 'Frost',
     'theme_forest': 'Forest',
@@ -348,6 +357,12 @@ class Strings {
     'currentBuild': 'Installed version: build {n}',
     'tapChord': 'Pick a chord to see and hear it',
     'fingers': 'Fingers: 1 index, 2 middle, 3 ring, 4 little',
+    'finger1': 'index',
+    'finger2': 'middle',
+    'finger3': 'ring',
+    'finger4': 'little',
+    'openStringLegend': 'open string',
+    'mutedStringLegend': 'not played',
     'fretNumbersLegend': 'The number in a circle is the fret',
     'songNotFound': 'This song could not be opened',
     'back': 'Back',
@@ -491,6 +506,9 @@ class Strings {
     'colorsBright': 'Vesele',
     'colorsHighContrast': 'Jak kontrast',
     'theme': 'Tema',
+    'lookSection': 'Izgled',
+    'playingSection': 'Sviranje',
+    'previewHint': 'Ovako će izgledati vrat gitare',
     'theme_classic': 'Klasična',
     'theme_frost': 'Mraz',
     'theme_forest': 'Šuma',
@@ -530,6 +548,12 @@ class Strings {
     'currentBuild': 'Instalirana verzija: build {n}',
     'tapChord': 'Izaberi akord da ga vidiš i čuješ',
     'fingers': 'Prsti: 1 kažiprst, 2 srednji, 3 domali, 4 mali',
+    'finger1': 'kažiprst',
+    'finger2': 'srednji',
+    'finger3': 'domali',
+    'finger4': 'mali',
+    'openStringLegend': 'prazna žica',
+    'mutedStringLegend': 'ne svira se',
     'fretNumbersLegend': 'Broj u kružiću je broj praga',
     'songNotFound': 'Ova pesma ne može da se otvori',
     'back': 'Nazad',

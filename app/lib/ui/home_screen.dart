@@ -11,6 +11,7 @@ import '../update/app_update.dart';
 import 'add_songs.dart';
 import 'chords_screen.dart';
 import 'common.dart';
+import 'themes.dart';
 import 'free_play_screen.dart';
 import 'player_screen.dart';
 import 'settings_screen.dart';
@@ -65,7 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final repo = AppServices.of(context).songs;
     final settings = SettingsScope.of(context);
     return Scaffold(
-      body: SafeArea(
+      body: AppBackground(
+        theme: settings.colorTheme,
+        child: SafeArea(
         child: ListenableBuilder(
           listenable: Listenable.merge([repo, _query]),
           builder: (context, _) {
@@ -120,25 +123,39 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
+        ),
       ),
     );
   }
 
   Widget _header(BuildContext context, Strings t) {
     void push(Widget Function() page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page()));
+    final scheme = Theme.of(context).colorScheme;
     final actions = [
-      _Action(Icons.grid_view_rounded, t.chords, () => push(() => const ChordsScreen())),
-      _Action(Icons.touch_app_rounded, t.freePlay, () => push(() => const FreePlayScreen())),
-      _Action(Icons.file_open_rounded, t.addSongs, () => addSongsFlow(context)),
-      _Action(Icons.settings_rounded, t.settings, () => push(() => const SettingsScreen())),
+      _Action(Icons.grid_view_rounded, t.chords, scheme.primary, () => push(() => const ChordsScreen())),
+      _Action(Icons.touch_app_rounded, t.freePlay, scheme.secondary, () => push(() => const FreePlayScreen())),
+      _Action(Icons.file_open_rounded, t.addSongs, const Color(0xFFB48CFF), () => addSongsFlow(context)),
+      _Action(Icons.settings_rounded, t.settings, const Color(0xFFF4F6FB), () => push(() => const SettingsScreen())),
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.music_note_rounded, size: 36, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 8),
-          Text(t.appTitle, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45), blurRadius: 18)],
+            ),
+            child: Icon(Icons.music_note_rounded, size: 30, color: Theme.of(context).colorScheme.onPrimary),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            t.appTitle,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+          ),
         ]),
         const SizedBox(height: 12),
         // The four places to go, as big cards: easy to hit with a finger and
@@ -165,7 +182,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ChoiceChip(
             label: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             selected: _difficulty == d,
-            selectedColor: d == null ? null : _difficultyColors[d]!.first,
+            selectedColor: d == null ? null : _difficultyColors[d],
+            avatar: d == null ? null : Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: _difficulty == d ? Colors.black45 : _difficultyColors[d])),
+            labelStyle: TextStyle(color: _difficulty == d && d != null ? const Color(0xFF14101E) : null),
             onSelected: (_) => setState(() => _difficulty = d),
           ),
         );
@@ -370,11 +389,47 @@ class _SearchBoxState extends State<_SearchBox> {
   }
 }
 
+/// One color per level, used for the dot on the song cards and the filter chips.
 const _difficultyColors = {
-  Difficulty.easy: [Color(0xFF1E8E5A), Color(0xFF136B43)],
-  Difficulty.medium: [Color(0xFF2F6BD8), Color(0xFF1F4CA3)],
-  Difficulty.hard: [Color(0xFFB2458F), Color(0xFF7E2D66)],
+  Difficulty.easy: Color(0xFF4CE0A0),
+  Difficulty.medium: Color(0xFFFFC93C),
+  Difficulty.hard: Color(0xFFFF6B8A),
 };
+
+/// A small pill with a colored dot and the name of the level.
+class _DifficultyChip extends StatelessWidget {
+  const _DifficultyChip(this.difficulty);
+
+  final Difficulty difficulty;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Strings.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
+      decoration: BoxDecoration(
+        color: glassHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: _difficultyColors[difficulty]),
+        ),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            t.difficulty(difficulty.name),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+          ),
+        ),
+      ]),
+    );
+  }
+}
 
 class SongCard extends StatelessWidget {
   const SongCard({
@@ -397,64 +452,46 @@ class SongCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Strings.of(context);
-    final colors = _difficultyColors[song.difficulty]!;
-    final stars = switch (song.difficulty) { Difficulty.easy => 1, Difficulty.medium => 2, Difficulty.hard => 3 };
+    final scheme = Theme.of(context).colorScheme;
     final subtitle = song.artist.isNotEmpty ? song.artist : (imported ? (song.format ?? t.fromFile) : '');
     return FocusCard(
       width: 220,
       autofocus: autofocus,
       onTap: onTap,
       onLongPress: onLongPress,
-      color: colors.last,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                for (var i = 0; i < 3; i++)
-                  Icon(i < stars ? Icons.star_rounded : Icons.star_outline_rounded, size: 20, color: Colors.white),
-                const SizedBox(width: 6),
-                // Narrow cards (a phone's search results) shorten the word rather than overflow.
-                Flexible(
-                  child: Text(
-                    t.difficulty(song.difficulty.name),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                const Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 30),
-              ]),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Flexible(child: _DifficultyChip(song.difficulty)),
               const Spacer(),
-              Text(
-                t.songTitle(song),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.15),
-              ),
-              const SizedBox(height: 4),
-              Row(children: [
-                if (imported) ...[
-                  const Icon(Icons.insert_drive_file_rounded, size: 14, color: Colors.white70),
-                  const SizedBox(width: 4),
-                ],
-                Expanded(
-                  child: Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                  ),
+              Icon(Icons.play_circle_fill_rounded, color: scheme.primary, size: 30),
+            ]),
+            const Spacer(),
+            Text(
+              t.songTitle(song),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.15),
+            ),
+            const SizedBox(height: 4),
+            Row(children: [
+              if (imported) ...[
+                Icon(Icons.insert_drive_file_rounded, size: 14, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+              ],
+              Expanded(
+                child: Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
                 ),
-              ]),
-            ],
-          ),
+              ),
+            ]),
+          ],
         ),
       ),
     );
@@ -498,7 +535,6 @@ class _AddSongsBanner extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       child: FocusCard(
         onTap: onTap,
-        color: scheme.surfaceContainerHigh,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
           child: Row(children: [
@@ -508,7 +544,7 @@ class _AddSongsBanner extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(t.mySongs, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text(t.addSongsHint, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+                Text(t.addSongsHint, style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant)),
               ]),
             ),
             const SizedBox(width: 12),
@@ -531,8 +567,9 @@ class _ComingSoonCard extends StatelessWidget {
       width: 220,
       height: 150,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white24, width: 2),
+        borderRadius: BorderRadius.circular(cardRadius),
+        color: glassLow,
+        border: Border.all(color: glassBorder, width: 2),
       ),
       alignment: Alignment.center,
       child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -545,10 +582,13 @@ class _ComingSoonCard extends StatelessWidget {
 }
 
 class _Action {
-  const _Action(this.icon, this.label, this.onTap);
+  const _Action(this.icon, this.label, this.tint, this.onTap);
 
   final IconData icon;
   final String label;
+
+  /// The color of the icon and of the tile behind it.
+  final Color tint;
   final VoidCallback onTap;
 }
 
@@ -561,16 +601,25 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return FocusCard(
       width: width,
-      height: 64,
+      height: 68,
       onTap: action.onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(children: [
-          Icon(action.icon, size: 30, color: scheme.primary),
-          const SizedBox(width: 10),
+          // The icon sits on a tile in its own color, so the four cards
+          // are told apart by color as well as by the word.
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: action.tint.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(action.icon, size: 26, color: action.tint),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               action.label,
@@ -597,40 +646,44 @@ class _ContinueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final colors = _difficultyColors[song.difficulty]!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
       child: FocusCard(
         onTap: onTap,
         onLongPress: onLongPress,
-        color: colors.last,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: colors, begin: Alignment.centerLeft, end: Alignment.centerRight),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
-            child: Row(children: [
-              Icon(Icons.play_circle_fill_rounded, size: 52, color: Colors.white),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text(t.continueSong, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white70)),
-                  const SizedBox(height: 2),
-                  Text(
-                    t.songTitle(song),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
-                  ),
-                  if (song.artist.isNotEmpty)
-                    Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Colors.white70)),
-                ]),
+        color: scheme.primary.withValues(alpha: 0.14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 18, 12),
+          child: Row(children: [
+            // A glowing play button: the first thing the eye lands on.
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.primary,
+                boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: 0.5), blurRadius: 18)],
               ),
-              const SizedBox(width: 12),
-              Text(t.difficulty(song.difficulty.name), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: scheme.onPrimary.withValues(alpha: 0.9))),
-            ]),
-          ),
+              child: Icon(Icons.play_arrow_rounded, size: 36, color: scheme.onPrimary),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(t.continueSong, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: scheme.primary)),
+                const SizedBox(height: 2),
+                Text(
+                  t.songTitle(song),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+                ),
+                if (song.artist.isNotEmpty)
+                  Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant)),
+              ]),
+            ),
+            const SizedBox(width: 12),
+            _DifficultyChip(song.difficulty),
+          ]),
         ),
       ),
     );
