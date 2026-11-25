@@ -109,6 +109,9 @@ void main() {
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Check for a new version'), 300);
+    // The row is built a little before it scrolls onto the screen.
+    await tester.ensureVisible(find.text('Check for a new version'));
+    await tester.pumpAndSettle();
     expect(find.text('Installed version: build 29'), findsOneWidget);
 
     await tester.tap(find.text('Check for a new version'));
