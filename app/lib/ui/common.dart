@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/strings.dart';
+import '../settings/settings.dart';
 import 'themes.dart';
 
 /// The OK button: the center of a TV remote's arrows, or Enter on a keyboard.
@@ -494,3 +496,77 @@ class ControlGroup extends StatelessWidget {
     );
   }
 }
+
+/// One of the options in a [ChoiceRow].
+class ChoiceOption {
+  const ChoiceOption({required this.label, required this.selected, required this.onTap, this.hint, this.leading});
+
+  final String label;
+  final String? hint;
+  final Widget? leading;
+  final bool selected;
+  final VoidCallback onTap;
+}
+
+/// A few options side by side; the chosen one is filled with the accent
+/// color. They wrap onto more rows on a narrow phone.
+class ChoiceRow extends StatelessWidget {
+  const ChoiceRow({super.key, required this.options, this.autofocus = false});
+
+  final List<ChoiceOption> options;
+
+  /// The first option takes the remote's focus when the screen opens.
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          for (final (i, o) in options.indexed)
+            FocusCard(
+              autofocus: autofocus && i == 0,
+              onTap: o.onTap,
+              radius: 16,
+              color: o.selected ? scheme.primary : null,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (o.leading case final leading?) ...[leading, const SizedBox(width: 10)],
+                  Icon(
+                    o.selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                    size: 20,
+                    color: o.selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text(
+                      o.label,
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: o.selected ? scheme.onPrimary : null),
+                    ),
+                    if (o.hint case final hint?)
+                      Text(hint, style: TextStyle(fontSize: 12, color: o.selected ? scheme.onPrimary.withValues(alpha: 0.85) : scheme.onSurfaceVariant)),
+                  ]),
+                ]),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The choices for how many of the coming notes the neck shows, for the
+/// settings screen and the player's own settings sheet.
+List<ChoiceOption> notePreviewOptions(Strings t, AppSettings s) => [
+      for (final (label, value) in [
+        (t.notePreviewNone, NotePreview.none),
+        (t.notePreviewNext, NotePreview.next),
+        (t.notePreviewSeveral, NotePreview.several),
+      ])
+        ChoiceOption(label: label, selected: s.notePreview == value, onTap: () => s.update((x) => x.notePreview = value)),
+    ];

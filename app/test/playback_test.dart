@@ -3,6 +3,7 @@ import 'package:guitar_learn/audio/synth.dart';
 import 'package:guitar_learn/models/chord.dart';
 import 'package:guitar_learn/models/song.dart';
 import 'package:guitar_learn/playback/playback_controller.dart';
+import 'package:guitar_learn/settings/settings.dart';
 import 'package:guitar_learn/ui/scene_builder.dart';
 
 Song _song() => Song.fromJson({
@@ -282,6 +283,50 @@ void main() {
     // Next fretted note (string 1, fret 3 at beat 2) is within the preview window.
     expect(scene.dots.any((d) => d.string == 1 && d.fret == 3 && d.opacity < 1), isTrue);
     expect(scene.pluckAge.containsKey(2), isTrue);
+  });
+
+  test('the note to play now is the only full dot; the next ones are small and still', () {
+    c.setSpeed(1);
+    c.play();
+    now = 0.1;
+    c.tick();
+    final first = buildScene(c, time: 0.1, preview: NotePreview.several);
+    expect(first.dots.where((d) => d.now).map((d) => (d.string, d.fret)), [(2, 1)]);
+    // Beat 1 is an open string: no dot, and beat 2 is past the look-ahead.
+    expect(first.dots.where((d) => !d.now), isEmpty);
+
+    now = 1.1;
+    c.tick();
+    final all = buildScene(c, time: 1.1, preview: NotePreview.several);
+    expect(all.dots.where((d) => d.now), isEmpty);
+    expect(all.openStrings, {1});
+    final coming = all.dots.where((d) => !d.now).toList();
+    expect(coming.map((d) => (d.string, d.fret)), [(1, 3)]);
+    expect(coming.single.scale, lessThan(1));
+    // The dots keep still: a moment later they are the same size and shade.
+    now = 1.3;
+    c.tick();
+    final later = buildScene(c, time: 1.3, preview: NotePreview.several).dots.single;
+    expect((later.string, later.fret, later.opacity, later.scale), (1, 3, coming.single.opacity, coming.single.scale));
+
+    final next = buildScene(c, time: 1.3, preview: NotePreview.next);
+    expect(next.dots.where((d) => !d.now).map((d) => (d.string, d.fret)), [(1, 3)]);
+    final none = buildScene(c, time: 1.3, preview: NotePreview.none);
+    expect(none.dots, isEmpty);
+  });
+
+  test('"the next one" shows one cue, "the next few" everything in the look-ahead', () {
+    // At 100% the look-ahead is 1.2 beats.
+    c.setSpeed(1);
+    c.play();
+    now = 2.9;
+    c.tick();
+    // Now: string 1 fret 3 (beat 2, two beats long). Next: beat 4 on string 3.
+    final several = buildScene(c, time: 2.9, preview: NotePreview.several);
+    expect(several.dots.where((d) => d.now).map((d) => (d.string, d.fret)), [(1, 3)]);
+    expect(several.dots.where((d) => !d.now).map((d) => (d.string, d.fret)), [(3, 2)]);
+    final next = buildScene(c, time: 2.9, preview: NotePreview.next);
+    expect(next.dots.where((d) => !d.now).map((d) => (d.string, d.fret)), [(3, 2)]);
   });
 
   test('starts note by note, with chords as the alternative', () {

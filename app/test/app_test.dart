@@ -30,7 +30,10 @@ void main() {
     addTearDown(tester.view.reset);
 
     final repo = await tester.runAsync(_repo);
-    final settings = AppSettings.inMemory()..language = AppLanguage.en;
+    // The count-in is off by default; this test watches it.
+    final settings = AppSettings.inMemory()
+      ..language = AppLanguage.en
+      ..countIn = true;
     final synth = RecordingSynth();
     await tester.pumpWidget(GuitarApp(settings: settings, songs: repo!, synth: synth));
     await tester.pump();
@@ -151,7 +154,10 @@ void main() {
     await tester.pump();
     expect(find.text('Repeat part'), findsOneWidget);
 
-    // The other guitar can be shown on a second neck underneath.
+    // The other guitar can be shown on a second neck underneath. The
+    // sheet also holds the player settings, so its end is below the fold.
+    await tester.dragUntilVisible(find.text('Second instrument underneath'), find.byType(ListView).last, const Offset(0, -80));
+    await tester.pump();
     expect(find.text('Second instrument underneath'), findsOneWidget);
     await tester.tap(find.text('Lead Guitar').last);
     await tester.pump();

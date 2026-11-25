@@ -79,11 +79,11 @@ class SettingsScreen extends StatelessWidget {
       // The choices with a few options sit side by side as cards, so the
       // list is short and a remote reaches everything in a few presses.
       _Section(icon: Icons.language_rounded, title: t.language_, children: [
-        _ChoiceRow(
+        ChoiceRow(
           autofocus: true,
           options: [
             for (final (lang, label) in languages)
-              _Choice(label: label, selected: s.language == lang, onTap: () => s.update((x) => x.language = lang)),
+              ChoiceOption(label: label, selected: s.language == lang, onTap: () => s.update((x) => x.language = lang)),
           ],
         ),
       ]),
@@ -91,9 +91,9 @@ class SettingsScreen extends StatelessWidget {
         // A small neck shows every choice below as soon as it is made.
         const _NeckPreview(),
         _Label(t.theme),
-        _ChoiceRow(options: [
+        ChoiceRow(options: [
           for (final theme in AppColorTheme.values)
-            _Choice(
+            ChoiceOption(
               label: t.themeName(theme.name),
               leading: _ThemeSwatch(theme),
               selected: s.colorTheme == theme,
@@ -101,13 +101,15 @@ class SettingsScreen extends StatelessWidget {
             ),
         ]),
         _Label(t.dotLabel),
-        _ChoiceRow(options: [
+        ChoiceRow(options: [
           for (final (label, hint, value) in [
             (t.dotLabelFinger, t.dotLabelFingerHint, DotLabel.finger),
             (t.dotLabelFret, t.dotLabelFretHint, DotLabel.fret),
           ])
-            _Choice(label: label, hint: hint, selected: s.dotLabel == value, onTap: () => s.update((x) => x.dotLabel = value)),
+            ChoiceOption(label: label, hint: hint, selected: s.dotLabel == value, onTap: () => s.update((x) => x.dotLabel = value)),
         ]),
+        _Label(t.notePreview),
+        ChoiceRow(options: notePreviewOptions(t, s)),
         const SizedBox(height: 6),
         toggle(t.leftHanded, t.leftHandedHint, s.leftHanded, (x, v) => x.leftHanded = v),
         toggle(t.thinStringTop, t.thinStringTopHint, s.thinStringOnTop, (x, v) => x.thinStringOnTop = v),
@@ -510,68 +512,6 @@ class _AddSourceDialogState extends State<_AddSourceDialog> {
         TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.cancel)),
         FilledButton(onPressed: _checking ? null : _add, child: Text(_checking ? t.checking : t.add)),
       ],
-    );
-  }
-}
-
-class _Choice {
-  const _Choice({required this.label, required this.selected, required this.onTap, this.hint, this.leading});
-
-  final String label;
-  final String? hint;
-  final Widget? leading;
-  final bool selected;
-  final VoidCallback onTap;
-}
-
-/// A few options side by side; the chosen one is filled with the accent
-/// color. They wrap onto more rows on a narrow phone.
-class _ChoiceRow extends StatelessWidget {
-  const _ChoiceRow({required this.options, this.autofocus = false});
-
-  final List<_Choice> options;
-
-  /// The first option takes the remote's focus when the screen opens.
-  final bool autofocus;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: [
-          for (final (i, o) in options.indexed)
-            FocusCard(
-              autofocus: autofocus && i == 0,
-              onTap: o.onTap,
-              radius: 16,
-              color: o.selected ? scheme.primary : null,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  if (o.leading case final leading?) ...[leading, const SizedBox(width: 10)],
-                  Icon(
-                    o.selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                    size: 20,
-                    color: o.selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                    Text(
-                      o.label,
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: o.selected ? scheme.onPrimary : null),
-                    ),
-                    if (o.hint case final hint?)
-                      Text(hint, style: TextStyle(fontSize: 12, color: o.selected ? scheme.onPrimary.withValues(alpha: 0.85) : scheme.onSurfaceVariant)),
-                  ]),
-                ]),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }
