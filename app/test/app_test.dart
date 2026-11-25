@@ -116,6 +116,27 @@ void main() {
     expect(find.textContaining('Capo 2'), findsOneWidget);
     expect(settings.recentSongs, [repo.importedSongs.single.id]);
 
+    // The second guitar is one press away, next to the part: a pill that
+    // opens the other parts, and shows the chosen one.
+    await tester.tap(find.byTooltip('Second instrument underneath'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Lead Guitar').last);
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(find.byType(FretboardView), findsNWidgets(2));
+    expect(find.text('Lead Guitar'), findsOneWidget); // in the corner of the second neck (the pill is icon-only at this width)
+    await tester.tap(find.byTooltip('Second instrument underneath'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('None'));
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(find.byType(FretboardView), findsOneWidget);
+    expect(find.descendant(of: find.byTooltip('Second instrument underneath'), matching: find.byIcon(Icons.add_rounded)), findsOneWidget); // the pill is empty again
+
     // The loop (under "More") grows from 2 bars to 4, then switches off.
     await tester.tap(find.byTooltip('More'));
     await tester.pump();

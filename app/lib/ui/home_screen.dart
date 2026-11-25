@@ -138,26 +138,26 @@ class _HomeScreenState extends State<HomeScreen> {
       _Action(Icons.settings_rounded, t.settings, const Color(0xFFF4F6FB), () => push(() => const SettingsScreen())),
     ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(mainAxisSize: MainAxisSize.min, children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [BoxShadow(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.45), blurRadius: 18)],
             ),
-            child: Icon(Icons.music_note_rounded, size: 30, color: Theme.of(context).colorScheme.onPrimary),
+            child: Icon(Icons.music_note_rounded, size: 26, color: Theme.of(context).colorScheme.onPrimary),
           ),
           const SizedBox(width: 12),
           Text(
             t.appTitle,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.5),
           ),
         ]),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         // The four places to go, as big cards: easy to hit with a finger and
         // easy to see with a remote. Side by side on a TV or tablet, two by
         // two on a phone.
@@ -180,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Widget chip(String label, Difficulty? d) => Padding(
           padding: const EdgeInsets.only(right: 8),
           child: ChoiceChip(
-            label: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            label: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             selected: _difficulty == d,
             selectedColor: d == null ? null : _difficultyColors[d],
             avatar: d == null ? null : Container(width: 10, height: 10, decoration: BoxDecoration(shape: BoxShape.circle, color: _difficulty == d ? Colors.black45 : _difficultyColors[d])),
@@ -228,11 +228,11 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+            child: Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
           ),
           SizedBox(
-            height: 168,
+            height: 148,
             child: songs.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     itemCount: count,
-                    separatorBuilder: (_, _) => const SizedBox(width: 14),
+                    separatorBuilder: (_, _) => const SizedBox(width: 12),
                     // A card keeps its widget (and the remote's focus) when
                     // the row reorders: "Recently played" moves the song
                     // that was just opened to the front.
@@ -288,10 +288,10 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       sliver: SliverGrid.builder(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 240,
-          mainAxisExtent: 152,
-          mainAxisSpacing: 14,
-          crossAxisSpacing: 14,
+          maxCrossAxisExtent: 210,
+          mainAxisExtent: 132,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
         ),
         itemCount: songs.length,
         itemBuilder: (context, i) => SongCard(
@@ -371,7 +371,7 @@ class _SearchBoxState extends State<_SearchBox> {
           controller: widget.controller,
           focusNode: _field,
           textInputAction: TextInputAction.search,
-          style: const TextStyle(fontSize: 18),
+          style: const TextStyle(fontSize: 16),
           onSubmitted: (_) => _stop.requestFocus(),
           decoration: InputDecoration(
             hintText: widget.hint,
@@ -423,7 +423,7 @@ class _DifficultyChip extends StatelessWidget {
             t.difficulty(difficulty.name),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
           ),
         ),
       ]),
@@ -455,31 +455,31 @@ class SongCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final subtitle = song.artist.isNotEmpty ? song.artist : (imported ? (song.format ?? t.fromFile) : '');
     return FocusCard(
-      width: 220,
+      width: 190,
       autofocus: autofocus,
       onTap: onTap,
       onLongPress: onLongPress,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
               Flexible(child: _DifficultyChip(song.difficulty)),
               const Spacer(),
-              Icon(Icons.play_circle_fill_rounded, color: scheme.primary, size: 30),
+              Icon(Icons.play_circle_fill_rounded, color: scheme.primary, size: 26),
             ]),
             const Spacer(),
             Text(
               t.songTitle(song),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, height: 1.15),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, height: 1.15),
             ),
             const SizedBox(height: 4),
             Row(children: [
               if (imported) ...[
-                Icon(Icons.insert_drive_file_rounded, size: 14, color: scheme.onSurfaceVariant),
+                Icon(Icons.insert_drive_file_rounded, size: 13, color: scheme.onSurfaceVariant),
                 const SizedBox(width: 4),
               ],
               Expanded(
@@ -487,7 +487,7 @@ class SongCard extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+                  style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
                 ),
               ),
             ]),
@@ -508,13 +508,13 @@ class _AddSongsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Strings.of(context);
     return FocusCard(
-      width: 150,
+      width: 130,
       onTap: onTap,
       child: Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.add_circle_outline_rounded, size: 40, color: Theme.of(context).colorScheme.primary),
+          Icon(Icons.add_circle_outline_rounded, size: 34, color: Theme.of(context).colorScheme.primary),
           const SizedBox(height: 8),
-          Text(t.addSongs, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+          Text(t.addSongs, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700), textAlign: TextAlign.center),
         ]),
       ),
     );
@@ -538,13 +538,13 @@ class _AddSongsBanner extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
           child: Row(children: [
-            Icon(Icons.library_music_rounded, size: 40, color: scheme.primary),
+            Icon(Icons.library_music_rounded, size: 34, color: scheme.primary),
             const SizedBox(width: 16),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(t.mySongs, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+                Text(t.mySongs, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text(t.addSongsHint, style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant)),
+                Text(t.addSongsHint, style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
               ]),
             ),
             const SizedBox(width: 12),
@@ -564,8 +564,8 @@ class _ComingSoonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 220,
-      height: 150,
+      width: 190,
+      height: 132,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(cardRadius),
         color: glassLow,
@@ -573,9 +573,9 @@ class _ComingSoonCard extends StatelessWidget {
       ),
       alignment: Alignment.center,
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.hourglass_top_rounded, size: 36, color: Colors.white54),
+        const Icon(Icons.hourglass_top_rounded, size: 32, color: Colors.white54),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 18, color: Colors.white70)),
+        Text(label, style: const TextStyle(fontSize: 16, color: Colors.white70)),
       ]),
     );
   }
@@ -603,7 +603,7 @@ class _ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return FocusCard(
       width: width,
-      height: 68,
+      height: 56,
       onTap: action.onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -611,13 +611,13 @@ class _ActionCard extends StatelessWidget {
           // The icon sits on a tile in its own color, so the four cards
           // are told apart by color as well as by the word.
           Container(
-            width: 44,
-            height: 44,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: action.tint.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(action.icon, size: 26, color: action.tint),
+            child: Icon(action.icon, size: 22, color: action.tint),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -625,7 +625,7 @@ class _ActionCard extends StatelessWidget {
               action.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
           ),
         ]),
@@ -653,32 +653,32 @@ class _ContinueCard extends StatelessWidget {
         onLongPress: onLongPress,
         color: scheme.primary.withValues(alpha: 0.14),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 18, 12),
+          padding: const EdgeInsets.fromLTRB(14, 10, 16, 10),
           child: Row(children: [
             // A glowing play button: the first thing the eye lands on.
             Container(
-              width: 56,
-              height: 56,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: scheme.primary,
                 boxShadow: [BoxShadow(color: scheme.primary.withValues(alpha: 0.5), blurRadius: 18)],
               ),
-              child: Icon(Icons.play_arrow_rounded, size: 36, color: scheme.onPrimary),
+              child: Icon(Icons.play_arrow_rounded, size: 30, color: scheme.onPrimary),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                Text(t.continueSong, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: scheme.primary)),
+                Text(t.continueSong, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: scheme.primary)),
                 const SizedBox(height: 2),
                 Text(
                   t.songTitle(song),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white),
                 ),
                 if (song.artist.isNotEmpty)
-                  Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant)),
+                  Text(song.artist, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant)),
               ]),
             ),
             const SizedBox(width: 12),

@@ -198,6 +198,12 @@ class _TopBar extends StatelessWidget {
         : song.tuning.reversed.map((p) => noteName(p, serbian: t.language.isSerbian)).join(' ');
     return LayoutBuilder(builder: (context, box) {
       final compact = box.maxWidth < _Controls.compactWidth;
+      // With two pills in the bar (a song with several parts) the names
+      // get long: below this width the second pill is just an icon, the
+      // first pill's name is shorter and the mode buttons use short words,
+      // so the bar fits a 1080p TV and a tablet.
+      final roomy = box.maxWidth >= 1300 || song.parts.length <= 1;
+      final shortModes = compact || !roomy;
       return ListenableBuilder(
         listenable: controller,
         builder: (context, _) {
@@ -220,7 +226,7 @@ class _TopBar extends StatelessWidget {
                         t.songTitle(song.info),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                       ),
                       if (tuning != null || song.capo > 0)
                         Text(
@@ -250,7 +256,7 @@ class _TopBar extends StatelessWidget {
                             const Icon(Icons.queue_music_rounded, size: 20),
                             const SizedBox(width: 6),
                             ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 160),
+                              constraints: BoxConstraints(maxWidth: roomy ? 160 : 110),
                               child: Text(
                                 song.parts[song.partIndex].name,
                                 maxLines: 1,
@@ -259,6 +265,41 @@ class _TopBar extends StatelessWidget {
                               ),
                             ),
                             const Icon(Icons.arrow_drop_down_rounded),
+                          ]),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (song.parts.length > 1) const SizedBox(width: 8),
+                // The second guitar sits right next to the first, so it is
+                // added with one press instead of a trip through "More".
+                if (song.parts.length > 1)
+                  Tooltip(
+                    message: t.secondPart,
+                    child: Material(
+                      color: controller.secondPart == null ? glass : scheme.primary.withValues(alpha: 0.22),
+                      shape: const StadiumBorder(side: BorderSide(color: glassBorder)),
+                      child: InkWell(
+                        customBorder: const StadiumBorder(),
+                        onTap: () => _chooseSecondPart(context),
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(10, 6, roomy ? 12 : 10, 6),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(controller.secondPart == null ? Icons.add_rounded : Icons.queue_music_rounded, size: 20),
+                            // On a narrow screen the pill is just the icon: a
+                            // chosen part is named in the corner of its neck.
+                            if (roomy) ...[
+                              const SizedBox(width: 6),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 140),
+                                child: Text(
+                                  controller.secondSong?.parts[controller.secondPart!].name ?? t.secondGuitar,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
                           ]),
                         ),
                       ),
@@ -283,7 +324,7 @@ class _TopBar extends StatelessWidget {
                     ),
                     child: Text(
                       chord ?? '\u2013',
-                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: chord == null ? scheme.onSurfaceVariant : scheme.onPrimary),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: chord == null ? scheme.onSurfaceVariant : scheme.onPrimary),
                     ),
                   ),
                 _BeatDots(controller: controller),
@@ -292,8 +333,8 @@ class _TopBar extends StatelessWidget {
                   SegmentedButton<TrackKind>(
                     showSelectedIcon: false,
                     segments: [
-                      ButtonSegment(value: TrackKind.full, label: Text(compact ? t.fullModeShort : t.fullMode)),
-                      ButtonSegment(value: TrackKind.easy, label: Text(compact ? t.easyModeShort : t.easyMode)),
+                      ButtonSegment(value: TrackKind.full, label: Text(shortModes ? t.fullModeShort : t.fullMode)),
+                      ButtonSegment(value: TrackKind.easy, label: Text(shortModes ? t.easyModeShort : t.easyMode)),
                     ],
                     selected: {controller.track},
                     onSelectionChanged: (s) => controller.setTrack(s.first),
@@ -325,6 +366,45 @@ class _TopBar extends StatelessWidget {
         },
       );
     });
+  }
+
+  /// The other parts, for the second neck underneath: "None" or one of
+  /// the parts that is not playing on the main neck. Opens on the current
+  /// choice and closes as soon as one is picked.
+  void _chooseSecondPart(BuildContext context) {
+    final t = Strings.of(context);
+    final song = controller.song;
+    final scheme = Theme.of(context).colorScheme;
+    final current = controller.secondPart;
+    Widget tile(IconData icon, String name, bool selected, int? index) => ListTile(
+          autofocus: selected,
+          leading: Icon(icon),
+          title: Text(name, style: const TextStyle(fontSize: 18)),
+          trailing: Icon(selected ? Icons.check_circle_rounded : Icons.circle_outlined, color: selected ? scheme.primary : null),
+          onTap: () {
+            Navigator.of(context).pop();
+            controller.setSecondPart(index);
+          },
+        );
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: 12),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Text(t.secondPart, style: TextStyle(fontSize: 15, color: scheme.primary, fontWeight: FontWeight.w600)),
+            ),
+            tile(Icons.hide_source_rounded, t.none, current == null, null),
+            for (final (i, p) in song.parts.indexed)
+              if (i != song.partIndex) tile(Icons.queue_music_rounded, p.name, current == i, i),
+          ],
+        ),
+      ),
+    );
   }
 
   /// The list of parts (guitars) in the file. With a remote the part that
@@ -534,7 +614,7 @@ class _Neck extends StatelessWidget {
                   padding: const EdgeInsets.all(28),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.emoji_events_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
-                    Text(t.wellDone, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
+                    Text(t.wellDone, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 18),
                     PrimaryButton(
                       autofocus: true,
@@ -611,7 +691,7 @@ class _Progress extends StatelessWidget {
         final bars = (total / bpb).ceil();
         final secondsPerBeat = 60 / (song.tempo * controller.speed);
         final labelStyle = TextStyle(
-          fontSize: 15,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontFeatures: const [FontFeature.tabularFigures()],
@@ -716,7 +796,7 @@ class _Controls extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: compact ? 136 : 176,
+                  width: compact ? 120 : 150,
                   child: PrimaryButton(
                     autofocus: true,
                     onPressed: mainAction,
@@ -750,7 +830,7 @@ class _Controls extends StatelessWidget {
                   SizedBox(
                     width: compact ? 56 : 64,
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text('$percent%', style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                      Text('$percent%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                       if (!compact) Text(t.speed, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ]),
                   ),

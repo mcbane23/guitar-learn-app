@@ -345,9 +345,9 @@ class PrimaryButton extends StatelessWidget {
     required this.icon,
     required this.label,
     this.autofocus = false,
-    this.height = 60,
-    this.iconSize = 32,
-    this.fontSize = 20,
+    this.height = 50,
+    this.iconSize = 26,
+    this.fontSize = 17,
   });
 
   final VoidCallback? onPressed;
@@ -382,7 +382,7 @@ class PrimaryButton extends StatelessWidget {
           minimumSize: Size(64, height),
           shadowColor: Colors.transparent,
           textStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w800),
-          padding: const EdgeInsets.symmetric(horizontal: 22),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
         ),
         icon: Icon(icon, size: iconSize),
         label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -436,7 +436,7 @@ class LabeledToggle extends StatelessWidget {
   final bool showLabel;
 
   /// Width of the text under the icon (and so of the whole button).
-  static const labelWidth = 76.0;
+  static const labelWidth = 66.0;
 
   @override
   Widget build(BuildContext context) {
@@ -464,7 +464,7 @@ class LabeledToggle extends StatelessWidget {
               width: labelWidth,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant), maxLines: 1),
+                child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant), maxLines: 1),
               ),
             ),
         ],
