@@ -24,35 +24,43 @@ class SettingsScreen extends StatelessWidget {
     final services = AppServices.of(context);
     final scheme = Theme.of(context).colorScheme;
 
+    // Every row gets the remote's white ring when it is selected: a list
+    // tile only tints itself, which cannot be seen on the glass.
     Widget toggle(String title, String? subtitle, bool value, void Function(AppSettings, bool) set) =>
-        SwitchListTile(
-          title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          subtitle: subtitle == null ? null : Text(subtitle),
-          value: value,
-          onChanged: (v) => s.update((x) => set(x, v)),
+        FocusHighlight(
+          child: SwitchListTile(
+            title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            subtitle: subtitle == null ? null : Text(subtitle),
+            value: value,
+            onChanged: (v) => s.update((x) => set(x, v)),
+          ),
         );
 
     // On a TV the sliders take only left and right from the remote; up and
     // down move on to the next setting instead of changing the value, so
     // everything under the sliders stays reachable.
-    Widget slider(String title, double value, Slider widget) => ListTile(
-          title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          subtitle: MediaQuery(
-            data: MediaQuery.of(context).copyWith(navigationMode: NavigationMode.directional),
-            child: widget,
+    Widget slider(String title, double value, Slider widget) => FocusHighlight(
+          child: ListTile(
+            title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            subtitle: MediaQuery(
+              data: MediaQuery.of(context).copyWith(navigationMode: NavigationMode.directional),
+              child: widget,
+            ),
+            trailing: _ValuePill('${(value * 100).round()}%'),
           ),
-          trailing: _ValuePill('${(value * 100).round()}%'),
         );
 
     Widget action(IconData icon, String title, {String? subtitle, VoidCallback? onTap, Widget? trailing, bool busy = false}) =>
-        ListTile(
-          leading: busy
-              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3))
-              : Icon(icon),
-          title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          subtitle: subtitle == null ? null : Text(subtitle),
-          trailing: trailing ?? (onTap == null ? null : const Icon(Icons.chevron_right_rounded, color: Colors.white38)),
-          onTap: onTap,
+        FocusHighlight(
+          child: ListTile(
+            leading: busy
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3))
+                : Icon(icon),
+            title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            subtitle: subtitle == null ? null : Text(subtitle),
+            trailing: trailing ?? (onTap == null ? null : const Icon(Icons.chevron_right_rounded, color: Colors.white38)),
+            onTap: onTap,
+          ),
         );
 
     Widget note(String text) => Padding(
@@ -175,17 +183,19 @@ class SettingsScreen extends StatelessWidget {
         _Label(t.songSources),
         note(t.songSourcesHint),
         for (final source in s.songSources)
-          ListTile(
-            leading: const Icon(Icons.link_rounded),
-            title: Text(source, style: const TextStyle(fontSize: 16)),
-            trailing: IconButton(
-              tooltip: t.removeSongSource,
-              icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () {
-                s.update((x) => x.songSources = [...x.songSources]..remove(source));
-                services.songs.extraSources = s.songSources;
-                services.songs.refresh();
-              },
+          FocusHighlight(
+            child: ListTile(
+              leading: const Icon(Icons.link_rounded),
+              title: Text(source, style: const TextStyle(fontSize: 16)),
+              trailing: IconButton(
+                tooltip: t.removeSongSource,
+                icon: const Icon(Icons.delete_outline_rounded),
+                onPressed: () {
+                  s.update((x) => x.songSources = [...x.songSources]..remove(source));
+                  services.songs.extraSources = s.songSources;
+                  services.songs.refresh();
+                },
+              ),
             ),
           ),
         action(Icons.add_link_rounded, t.addSongSource, onTap: () async {
@@ -200,7 +210,7 @@ class SettingsScreen extends StatelessWidget {
         }),
       ]),
       _Section(icon: Icons.info_rounded, title: t.about, children: [
-        _UpdateTile(updater: services.updater),
+        FocusHighlight(child: _UpdateTile(updater: services.updater)),
         ListTile(leading: const Icon(Icons.privacy_tip_outlined), title: Text(t.privacy)),
       ]),
     ];

@@ -708,8 +708,11 @@ class _Controls extends StatelessWidget {
           Widget toggle(IconData icon, String label, bool selected, VoidCallback? onPressed) =>
               LabeledToggle(icon: icon, label: label, selected: selected, onPressed: onPressed, showLabel: !compact);
           final gap = SizedBox(width: compact ? 6 : 10);
+          // On a wide screen the row keeps clear of the edges, so the ring
+          // and the glow around the big button are not cut off.
+          final side = compact ? 12.0 : 24.0;
           return Padding(
-            padding: EdgeInsets.fromLTRB(12, 2, 12, compact ? 4 : 8),
+            padding: EdgeInsets.fromLTRB(side, 2, side, compact ? 4 : 8),
             child: Row(
               children: [
                 SizedBox(

@@ -8,6 +8,7 @@ import 'l10n/strings.dart';
 import 'settings/settings.dart';
 import 'ui/add_songs.dart';
 import 'update/app_update.dart';
+import 'ui/common.dart';
 import 'ui/home_screen.dart';
 import 'ui/themes.dart';
 
@@ -99,6 +100,7 @@ class GuitarApp extends StatelessWidget {
                   // The OK / center button on TV remotes.
                   const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
                 },
+                builder: (context, child) => FocusTraversalGroup(policy: TvFocusTraversalPolicy(), child: child!),
                 home: const HomeScreen(),
               ),
             ),

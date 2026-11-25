@@ -6,6 +6,7 @@ import 'package:guitar_learn/audio/synth.dart';
 import 'package:guitar_learn/data/song_repository.dart';
 import 'package:guitar_learn/l10n/strings.dart';
 import 'package:guitar_learn/settings/settings.dart';
+import 'package:guitar_learn/ui/common.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -219,6 +220,105 @@ void main() {
     }
     await press(tester, LogicalKeyboardKey.arrowUp);
     expect(focusedSlider()!.value, 0.75);
+  });
+
+  testWidgets('right from the last card of a row stays put instead of jumping to another row', (tester) async {
+    await start(tester);
+    await press(tester, LogicalKeyboardKey.arrowUp, 2);
+    for (var i = 0; i < 8 && focusedText(tester) != 'Settings'; i++) {
+      await press(tester, LogicalKeyboardKey.arrowRight);
+    }
+    expect(focusedText(tester), 'Settings');
+    // Nothing is to the right of "Settings", so right does nothing.
+    await press(tester, LogicalKeyboardKey.arrowRight);
+    expect(focusedText(tester), 'Settings');
+    // The same for the last of the difficulty chips under the search box.
+    await press(tester, LogicalKeyboardKey.arrowDown);
+    for (var i = 0; i < 8 && focusedText(tester) != 'Hard'; i++) {
+      await press(tester, LogicalKeyboardKey.arrowRight);
+    }
+    expect(focusedText(tester), 'Hard');
+    await press(tester, LogicalKeyboardKey.arrowRight);
+    expect(focusedText(tester), 'Hard');
+  });
+
+  testWidgets('a selected card at the end of a row is scrolled fully into view, ring and all', (tester) async {
+    await start(tester);
+    expect(focusedText(tester), contains('Easy'));
+    // Walk right through the row until the focus stops moving.
+    String? last;
+    for (var i = 0; i < 20 && focusedText(tester) != last; i++) {
+      last = focusedText(tester);
+      await press(tester, LogicalKeyboardKey.arrowRight);
+      await tester.pump(const Duration(milliseconds: 300));
+      final ctx = FocusManager.instance.primaryFocus!.context!;
+      final card = ctx.findAncestorWidgetOfExactType<FocusCard>()!;
+      final rect = tester.getRect(find.byWidget(card));
+      // The whole card, plus room for the ring and the glow, is on screen.
+      expect(rect.right, lessThanOrEqualTo(960 - 12));
+      expect(rect.left, greaterThanOrEqualTo(12));
+    }
+    expect(last, isNotNull);
+  });
+
+  testWidgets('a wide card grows by pixels, not by a share of its width', (tester) async {
+    await start(tester);
+    // Play a song so the "Continue" card appears, then come back to it.
+    await press(tester, LogicalKeyboardKey.select);
+    await waitFor(tester, find.text('Play'));
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Continue'), findsOneWidget);
+    for (var i = 0; i < 6 && !(focusedText(tester) ?? '').contains('Continue'); i++) {
+      await press(tester, LogicalKeyboardKey.arrowUp);
+    }
+    expect(focusedText(tester), contains('Continue'));
+    await tester.pump(const Duration(milliseconds: 300));
+    final ctx = FocusManager.instance.primaryFocus!.context!;
+    final scale = ctx.findAncestorWidgetOfExactType<AnimatedScale>()!;
+    final width = tester.getSize(find.byWidget(scale)).width;
+    expect(width, greaterThan(800));
+    // About 6 pixels on each side: the ring stays on the screen.
+    expect(scale.scale, closeTo(1 + 12 / width, 1e-6));
+    // A song card still grows the full 5%.
+    await press(tester, LogicalKeyboardKey.arrowDown);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(focusedText(tester), contains('Easy'));
+    final small = FocusManager.instance.primaryFocus!.context!.findAncestorWidgetOfExactType<AnimatedScale>()!;
+    expect(small.scale, 1.05);
+  });
+
+  testWidgets('settings: every row shows the ring when it is selected', (tester) async {
+    await start(tester);
+    await press(tester, LogicalKeyboardKey.arrowUp, 2);
+    for (var i = 0; i < 8 && focusedText(tester) != 'Settings'; i++) {
+      await press(tester, LogicalKeyboardKey.arrowRight);
+    }
+    await press(tester, LogicalKeyboardKey.select);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Language'), findsOneWidget);
+    // The ring around the selected row: the white border of the highlight.
+    int rings() => tester
+        .widgetList<AnimatedContainer>(find.descendant(of: find.byType(FocusHighlight), matching: find.byType(AnimatedContainer)))
+        .where((c) => (c.decoration as BoxDecoration?)?.border?.top.color == Colors.white)
+        .length;
+    // From the first choice down to "Check for a new version": once past
+    // the choice cards, exactly one row is ringed at every step.
+    var seen = 0;
+    for (var i = 0; i < 30 && !(focusedText(tester) ?? '').contains('Check for a new version'); i++) {
+      await press(tester, LogicalKeyboardKey.arrowDown);
+      await tester.pump(const Duration(milliseconds: 200));
+      final ctx = FocusManager.instance.primaryFocus!.context!;
+      if (ctx.findAncestorWidgetOfExactType<FocusHighlight>() != null) {
+        expect(rings(), 1, reason: 'row "${focusedText(tester)}" should be ringed');
+        seen++;
+      } else {
+        expect(rings(), 0);
+      }
+    }
+    expect(focusedText(tester), contains('Check for a new version'));
+    expect(seen, greaterThanOrEqualTo(12));
   });
 
   testWidgets('add songs: all four choices fit on the TV screen', (tester) async {
