@@ -220,7 +220,7 @@ class _TopBar extends StatelessWidget {
                         t.songTitle(song.info),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, letterSpacing: -0.3),
                       ),
                       if (tuning != null || song.capo > 0)
                         Text(
@@ -283,7 +283,7 @@ class _TopBar extends StatelessWidget {
                     ),
                     child: Text(
                       chord ?? '\u2013',
-                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: chord == null ? scheme.onSurfaceVariant : scheme.onPrimary),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: chord == null ? scheme.onSurfaceVariant : scheme.onPrimary),
                     ),
                   ),
                 _BeatDots(controller: controller),
@@ -534,7 +534,7 @@ class _Neck extends StatelessWidget {
                   padding: const EdgeInsets.all(28),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.emoji_events_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
-                    Text(t.wellDone, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
+                    Text(t.wellDone, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 18),
                     PrimaryButton(
                       autofocus: true,
@@ -611,7 +611,7 @@ class _Progress extends StatelessWidget {
         final bars = (total / bpb).ceil();
         final secondsPerBeat = 60 / (song.tempo * controller.speed);
         final labelStyle = TextStyle(
-          fontSize: 15,
+          fontSize: 13,
           fontWeight: FontWeight.w700,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontFeatures: const [FontFeature.tabularFigures()],
@@ -716,7 +716,7 @@ class _Controls extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: compact ? 136 : 176,
+                  width: compact ? 120 : 150,
                   child: PrimaryButton(
                     autofocus: true,
                     onPressed: mainAction,
@@ -750,7 +750,7 @@ class _Controls extends StatelessWidget {
                   SizedBox(
                     width: compact ? 56 : 64,
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Text('$percent%', style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                      Text('$percent%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                       if (!compact) Text(t.speed, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ]),
                   ),

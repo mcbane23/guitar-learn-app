@@ -133,28 +133,28 @@ ThemeData buildTheme([AppColorTheme theme = AppColorTheme.classic]) {
   return base.copyWith(
     scaffoldBackgroundColor: p.background,
     canvasColor: p.backgroundTop,
-    visualDensity: VisualDensity.comfortable,
+    visualDensity: VisualDensity.compact,
     focusColor: Colors.white.withValues(alpha: 0.12),
     splashFactory: InkSparkle.splashFactory,
     textTheme: base.textTheme.apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       scrolledUnderElevation: 0,
-      titleTextStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: scheme.onSurface),
+      titleTextStyle: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: scheme.onSurface),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(64, 56),
-        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        minimumSize: const Size(64, 48),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         padding: const EdgeInsets.symmetric(horizontal: 20),
       ).merge(focus),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(textStyle: const TextStyle(fontSize: 18)).merge(focus),
+      style: TextButton.styleFrom(textStyle: const TextStyle(fontSize: 16)).merge(focus),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(style: focus),
     iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(minimumSize: const Size(52, 52), iconSize: 28).merge(focus),
+      style: IconButton.styleFrom(minimumSize: const Size(46, 46), iconSize: 24).merge(focus),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(

@@ -29,7 +29,7 @@ class SettingsScreen extends StatelessWidget {
     Widget toggle(String title, String? subtitle, bool value, void Function(AppSettings, bool) set) =>
         FocusHighlight(
           child: SwitchListTile(
-            title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             subtitle: subtitle == null ? null : Text(subtitle),
             value: value,
             onChanged: (v) => s.update((x) => set(x, v)),
@@ -41,7 +41,7 @@ class SettingsScreen extends StatelessWidget {
     // everything under the sliders stays reachable.
     Widget slider(String title, double value, Slider widget) => FocusHighlight(
           child: ListTile(
-            title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             subtitle: MediaQuery(
               data: MediaQuery.of(context).copyWith(navigationMode: NavigationMode.directional),
               child: widget,
@@ -56,7 +56,7 @@ class SettingsScreen extends StatelessWidget {
             leading: busy
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3))
                 : Icon(icon),
-            title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             subtitle: subtitle == null ? null : Text(subtitle),
             trailing: trailing ?? (onTap == null ? null : const Icon(Icons.chevron_right_rounded, color: Colors.white38)),
             onTap: onTap,
@@ -186,7 +186,7 @@ class SettingsScreen extends StatelessWidget {
           FocusHighlight(
             child: ListTile(
               leading: const Icon(Icons.link_rounded),
-              title: Text(source, style: const TextStyle(fontSize: 16)),
+              title: Text(source, style: const TextStyle(fontSize: 15)),
               trailing: IconButton(
                 tooltip: t.removeSongSource,
                 icon: const Icon(Icons.delete_outline_rounded),
@@ -248,24 +248,24 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: GlassPanel(
-        padding: const EdgeInsets.fromLTRB(4, 14, 4, 10),
+        padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: Row(children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: scheme.primary.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 22, color: scheme.primary),
+                child: Icon(icon, size: 20, color: scheme.primary),
               ),
               const SizedBox(width: 12),
-              Text(title, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             ]),
           ),
           ...children,
@@ -287,7 +287,7 @@ class _Label extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Text(
         text,
-        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary),
       ),
     );
   }
@@ -304,7 +304,7 @@ class _ValuePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(color: glassHigh, borderRadius: BorderRadius.circular(14)),
-      child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+      child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -342,7 +342,7 @@ class _NeckPreview extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
       child: ExcludeFocus(
         child: Column(children: [
-          SizedBox(height: 150, child: FretboardView(scene: scene, style: style)),
+          SizedBox(height: 130, child: FretboardView(scene: scene, style: style)),
           Text(t.previewHint, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ]),
       ),
@@ -394,7 +394,7 @@ class _UpdateTileState extends State<_UpdateTile> {
       leading: _checking
           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3))
           : const Icon(Icons.system_update_rounded),
-      title: Text(_checking ? t.checkingForUpdate : t.checkForUpdate, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+      title: Text(_checking ? t.checkingForUpdate : t.checkForUpdate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       subtitle: _build != null && _build! > 0 ? Text(t.currentBuild(_build!)) : null,
       onTap: _checking ? null : _check,
     );
@@ -550,22 +550,22 @@ class _ChoiceRow extends StatelessWidget {
               radius: 16,
               color: o.selected ? scheme.primary : null,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 16, 10),
+                padding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   if (o.leading case final leading?) ...[leading, const SizedBox(width: 10)],
                   Icon(
                     o.selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-                    size: 22,
+                    size: 20,
                     color: o.selected ? scheme.onPrimary : scheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
                   Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
                     Text(
                       o.label,
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: o.selected ? scheme.onPrimary : null),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: o.selected ? scheme.onPrimary : null),
                     ),
                     if (o.hint case final hint?)
-                      Text(hint, style: TextStyle(fontSize: 13, color: o.selected ? scheme.onPrimary.withValues(alpha: 0.85) : scheme.onSurfaceVariant)),
+                      Text(hint, style: TextStyle(fontSize: 12, color: o.selected ? scheme.onPrimary.withValues(alpha: 0.85) : scheme.onSurfaceVariant)),
                   ]),
                 ]),
               ),

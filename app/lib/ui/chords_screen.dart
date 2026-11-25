@@ -121,7 +121,7 @@ class _ChordsScreenState extends State<ChordsScreen> with SingleTickerProviderSt
                   icon: const Icon(Icons.arrow_back_rounded),
                   onPressed: () => Navigator.pop(context),
                 ),
-                Text(t.chords, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
+                Text(t.chords, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900, letterSpacing: -0.3)),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
