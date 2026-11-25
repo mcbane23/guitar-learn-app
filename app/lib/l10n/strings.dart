@@ -104,6 +104,7 @@ class Strings {
   String get dotLabelFretHint => _t('dotLabelFretHint');
   String get back1Bar => _t('back1Bar');
   String get secondPart => _t('secondPart');
+  String get secondGuitar => _t('secondGuitar');
   String get none => _t('none');
   String get forward1Bar => _t('forward1Bar');
   String barOf(int n, int total) => _t('barOf', {'n': '$n', 'total': '$total'});
@@ -306,6 +307,7 @@ class Strings {
     'dotLabelFretHint': 'The same number that is written under the neck',
     'back1Bar': 'Bar back',
     'secondPart': 'Second instrument underneath',
+    'secondGuitar': 'Second guitar',
     'none': 'None',
     'forward1Bar': 'Bar forward',
     'barOf': 'Bar {n} / {total}',
@@ -497,6 +499,7 @@ class Strings {
     'dotLabelFretHint': 'Isti broj koji piše ispod vrata gitare',
     'back1Bar': 'Takt nazad',
     'secondPart': 'Drugi instrument ispod',
+    'secondGuitar': 'Druga gitara',
     'none': 'Nijedan',
     'forward1Bar': 'Takt napred',
     'barOf': 'Takt {n} / {total}',
